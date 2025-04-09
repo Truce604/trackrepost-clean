@@ -50,4 +50,3 @@ export const assignCreditsOnSignup = onUserCreated(async (event) => {
 export const helloWorld = onRequest((req, res) => {
   res.send("Hello from TrackRepost Firebase Functions!");
 });
-
