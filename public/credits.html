@@ -1,172 +1,106 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>💸 Buy Boosts - TrackRepost</title>
-  <link rel="icon" href="/favicon.ico" />
-  <script type="module" src="/js/auth-check.js"></script>
-  <script type="module" src="/js/header.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Buy Credits – TrackRepost</title>
+  <link rel="stylesheet" href="/styles.css">
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
   <script src="/js/firebaseConfig.js"></script>
-  <style>
-    body {
-      margin: 0;
-      font-family: 'Segoe UI', sans-serif;
-      background: #0d0d0d;
-      color: #fff;
-    }
-
-    #main {
-      max-width: 700px;
-      margin: 80px auto 60px;
-      padding: 20px;
-    }
-
-    h1 {
-      text-align: center;
-      font-size: 32px;
-      margin-bottom: 10px;
-    }
-
-    .credit-balance {
-      background: #1a1a1a;
-      border: 1px solid #333;
-      border-radius: 12px;
-      padding: 24px;
-      text-align: center;
-      font-size: 20px;
-      margin: 25px 0 40px;
-    }
-
-    .plans {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 20px;
-    }
-
-    .plan {
-      background: #141414;
-      border-radius: 14px;
-      padding: 20px;
-      text-align: center;
-      border: 1px solid #2a2a2a;
-      transition: 0.2s ease;
-    }
-
-    .plan:hover {
-      border-color: #ffb800;
-      transform: scale(1.02);
-    }
-
-    .plan h2 {
-      margin: 0;
-      font-size: 22px;
-    }
-
-    .plan p {
-      font-size: 15px;
-      color: #aaa;
-      margin: 8px 0 16px;
-    }
-
-    .plan button {
-      background: linear-gradient(135deg, #FFD700, #FFB800);
-      color: #000;
-      font-weight: bold;
-      padding: 12px 16px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 15px;
-      width: 100%;
-    }
-
-    .plan button:hover {
-      background: linear-gradient(135deg, #FFEA00, #FFC700);
-    }
-  </style>
 </head>
 <body>
   <div id="header"></div>
 
-  <div id="main">
-    <h1>💸 Buy Boosts</h1>
+  <div class="container" style="max-width: 600px; margin: 0 auto; padding: 2rem; text-align: center;">
+    <h1 style="color: #FFD100;">💳 Buy Credits</h1>
+    <p style="color: #bbb; margin-bottom: 30px;">Boost your campaigns or earn rewards faster.</p>
 
-    <div class="credit-balance">
-      Your Credit Balance: <span id="credit-count">Loading...</span>
+    <div id="credit-balance" style="color: #fff; font-weight: bold; margin-bottom: 20px;">
+      Checking your balance...
     </div>
 
-    <div class="plans">
-      <div class="plan">
-        <h2>🎯 500 Credits</h2>
-        <p>Perfect for a single track push</p>
-        <button onclick="buyCredits(2499, 500)">Buy for $24.99</button>
-      </div>
-      <div class="plan">
-        <h2>📈 1000 Credits</h2>
-        <p>Double boost for $34.99</p>
-        <button onclick="buyCredits(3499, 1000)">Buy for $34.99</button>
-      </div>
-      <div class="plan">
-        <h2>🔥 2500 + Artist Plan</h2>
-        <p>Includes 1 month Pro Features</p>
-        <button onclick="buyCredits(7999, 2500, 'Artist')">Buy for $79.99</button>
-      </div>
-      <div class="plan">
-        <h2>🚀 5000 + Network Plan</h2>
-        <p>Massive reach, pro tools unlocked</p>
-        <button onclick="buyCredits(13999, 5000, 'Network')">Buy for $139.99</button>
-      </div>
-      <div class="plan">
-        <h2>👑 25000 + Promoter Plan</h2>
-        <p>Max credits, elite-level tools</p>
-        <button onclick="buyCredits(54999, 25000, 'Promoter')">Buy for $549.99</button>
-      </div>
+    <div class="credit-options" style="display: flex; flex-direction: column; gap: 1rem;">
+      <button class="credit-button" onclick="buyCredits(2499, 500)">🚀 500 Credits – $24.99</button>
+      <button class="credit-button" onclick="buyCredits(3499, 1000)">⚡ 1000 Credits – $34.99</button>
+      <button class="credit-button" onclick="buyCredits(7999, 2500, 'Artist')">🎨 2500 + Artist Plan – $79.99</button>
+      <button class="credit-button" onclick="buyCredits(13999, 5000, 'Network')">🌐 5000 + Network Plan – $139.99</button>
+      <button class="credit-button" onclick="buyCredits(54999, 25000, 'Promoter')">🏆 25,000 + Promoter Plan – $549.99</button>
     </div>
+
+    <p style="color:#888;margin-top:30px;">Questions? <a href="mailto:officialtrackrepost@gmail.com" style="color:#FFD100;">Email us</a></p>
   </div>
 
+  <script src="/js/header.js"></script>
+  <script src="/js/auth-check.js"></script>
   <script>
-    let currentUser;
+    const auth = firebase.auth();
+    const db = firebase.firestore();
 
-    firebase.auth().onAuthStateChanged(async (user) => {
-      if (!user) return;
-      currentUser = user;
-      const db = firebase.firestore();
-      const userRef = db.collection("users").doc(user.uid);
-      const doc = await userRef.get();
-      document.getElementById("credit-count").textContent = doc.data().credits || 0;
+    auth.onAuthStateChanged(async user => {
+      if (user) {
+        const userRef = db.collection("users").doc(user.uid);
+        const userSnap = await userRef.get();
+        const credits = userSnap.data()?.credits || 0;
+        document.getElementById("credit-balance").innerHTML = `Your Balance: <span style="color:#FFD100;">${credits}</span> credits`;
+      } else {
+        document.getElementById("credit-balance").textContent = "Please log in to see your balance.";
+      }
     });
 
-    async function buyCredits(amount, credits, plan = null) {
+    async function buyCredits(amount, credits, plan) {
+      const user = auth.currentUser;
+      if (!user) return alert("Please log in to purchase.");
+
+      const body = { amount, credits, userId: user.uid };
+      if (plan) body.plan = plan;
+
       try {
-        const res = await fetch('/api/square/checkout', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            amount,
-            credits,
-            userId: currentUser.uid,
-            plan
-          })
+        const res = await fetch("/api/square/checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body)
         });
 
         const data = await res.json();
         if (data.url) {
           window.location.href = data.url;
         } else {
-          throw new Error("Checkout URL not received");
+          console.error("❌ Invalid response:", data);
+          alert("❌ Could not create checkout session.");
         }
       } catch (err) {
         console.error("❌ Error creating checkout:", err);
-        alert("Something went wrong. Try again.");
+        alert("❌ Something went wrong while creating your checkout.");
       }
     }
   </script>
+
+  <style>
+    .credit-button {
+      background-color: #FFD100;
+      color: #111;
+      border: none;
+      padding: 14px 20px;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .credit-button:hover {
+      background-color: #ffcc00;
+    }
+
+    body {
+      background-color: #111;
+      font-family: "Segoe UI", sans-serif;
+    }
+  </style>
 </body>
 </html>
+
 
 
 
