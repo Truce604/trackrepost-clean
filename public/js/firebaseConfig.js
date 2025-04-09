@@ -13,7 +13,7 @@ window.firebaseConfig = {
 firebase.initializeApp(window.firebaseConfig);
 
 // ✅ Global Square values
-window.SQUARE_APP_ID = "EAAAl2fPk73oOW5y3brJgQkeICaFS_tGz0w5NrFmyhciQ5E_m8GeUbdYw4gDw-wE";
+window.SQUARE_APP_ID = "EAAAlxK6rZ76mVInsBpTXk5shQJ6tMln1rBfCAOaTUFmRjPGITmu7f9vEQOzuvPD";
 window.SQUARE_LOCATION_ID = "sq0idp-PgaanSd67uGXtHuBFn7cZA";
 
 console.log("✅ Firebase config loaded");
