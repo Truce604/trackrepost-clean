@@ -1,11 +1,11 @@
-import functions from 'firebase-functions';
-import admin from 'firebase-admin';
+const functions = require('firebase-functions');
+const admin = require('firebase-admin');
 
 admin.initializeApp();
 const db = admin.firestore();
 
 // Assign 30 credits to new users on signup
-export const assignCreditsOnSignup = functions.auth.user().onCreate(async (user) => {
+exports.assignCreditsOnSignup = functions.auth.user().onCreate(async (user) => {
   const uid = user.uid;
 
   await db.collection('users').doc(uid).set({
@@ -16,7 +16,8 @@ export const assignCreditsOnSignup = functions.auth.user().onCreate(async (user)
   }, { merge: true });
 });
 
-// Test endpoint (optional)
-export const helloWorld = functions.https.onRequest((req, res) => {
+// Test function
+exports.helloWorld = functions.https.onRequest((req, res) => {
   res.send("Hello from TrackRepost Firebase Functions!");
 });
+
