@@ -14,58 +14,104 @@
   <style>
     body {
       margin: 0;
-      font-family: 'Segoe UI', sans-serif;
-      background: #0e0e0e;
+      background: #0c0c0c;
       color: #fff;
+      font-family: 'Segoe UI', sans-serif;
     }
 
     #main {
-      max-width: 600px;
-      margin: 80px auto;
+      max-width: 800px;
+      margin: 100px auto 60px;
       padding: 20px;
     }
 
     h1 {
-      font-size: 28px;
+      font-size: 30px;
       margin-bottom: 10px;
+      text-align: center;
     }
 
-    #credit-balance {
-      font-size: 18px;
-      margin-bottom: 30px;
-      color: #bbb;
+    .credit-balance {
+      background: #1e1e1e;
+      border: 1px solid #333;
+      border-radius: 12px;
+      padding: 24px;
+      text-align: center;
+      font-size: 20px;
+      margin-bottom: 40px;
     }
 
-    .credit-button {
-      display: block;
-      width: 100%;
-      margin: 12px 0;
-      padding: 16px;
-      font-size: 17px;
-      font-weight: bold;
-      color: #000;
+    .plans {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+    }
+
+    .plan {
+      background: #161616;
+      border: 1px solid #333;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      transition: 0.2s ease;
+    }
+
+    .plan:hover {
+      border-color: #ffb800;
+      transform: scale(1.02);
+    }
+
+    .plan h2 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    .plan p {
+      font-size: 15px;
+      color: #aaa;
+      margin: 8px 0 16px;
+    }
+
+    .plan button {
       background: linear-gradient(135deg, #FFD700, #FFB800);
+      color: #000;
+      font-weight: bold;
+      padding: 12px 16px;
       border: none;
-      border-radius: 10px;
+      border-radius: 8px;
       cursor: pointer;
       transition: all 0.2s ease;
+      font-size: 15px;
+      width: 100%;
     }
 
-    .credit-button:hover {
-      transform: scale(1.03);
+    .plan button:hover {
       background: linear-gradient(135deg, #FFEA00, #FFC700);
     }
 
-    .credit-button:active {
-      transform: scale(0.98);
-    }
+    @media (max-width: 480px) {
+      #main {
+        margin-top: 60px;
+        padding: 15px;
+      }
 
-    .plan-note {
-      font-size: 13px;
-      color: #888;
-      margin-top: -8px;
-      margin-bottom: 20px;
-      text-align: center;
+      .credit-balance {
+        font-size: 18px;
+        padding: 18px;
+      }
+
+      .plan h2 {
+        font-size: 18px;
+      }
+
+      .plan p {
+        font-size: 13px;
+      }
+
+      .plan button {
+        font-size: 14px;
+        padding: 10px;
+      }
     }
   </style>
 </head>
@@ -74,18 +120,42 @@
 
   <div id="main">
     <h1>Buy Credits</h1>
-    <p id="credit-balance">Your current balance: <span id="credit-count">Loading...</span></p>
 
-    <button class="credit-button" onclick="buyCredits(2499, 500)">500 Credits – $24.99</button>
-    <button class="credit-button" onclick="buyCredits(3499, 1000)">1000 Credits – $34.99</button>
-    <button class="credit-button" onclick="buyCredits(7999, 2500, 'Artist')">2500 Credits + Artist Plan – $79.99</button>
-    <p class="plan-note">Includes 1 month of Artist Plan features</p>
+    <div class="credit-balance">
+      Your Current Credit Balance: <span id="credit-count">Loading...</span>
+    </div>
 
-    <button class="credit-button" onclick="buyCredits(13999, 5000, 'Network')">5000 Credits + Network Plan – $139.99</button>
-    <p class="plan-note">Includes 1 month of Network Plan features</p>
+    <div class="plans">
+      <div class="plan">
+        <h2>500 Credits</h2>
+        <p>$24.99</p>
+        <button onclick="buyCredits(2499, 500)">Buy Now</button>
+      </div>
 
-    <button class="credit-button" onclick="buyCredits(54999, 25000, 'Promoter')">25000 Credits + Promoter Plan – $549.99</button>
-    <p class="plan-note">Includes 1 month of Promoter Plan features</p>
+      <div class="plan">
+        <h2>1000 Credits</h2>
+        <p>$34.99</p>
+        <button onclick="buyCredits(3499, 1000)">Buy Now</button>
+      </div>
+
+      <div class="plan">
+        <h2>2500 + Artist Plan</h2>
+        <p>$79.99</p>
+        <button onclick="buyCredits(7999, 2500, 'Artist')">Buy Now</button>
+      </div>
+
+      <div class="plan">
+        <h2>5000 + Network Plan</h2>
+        <p>$139.99</p>
+        <button onclick="buyCredits(13999, 5000, 'Network')">Buy Now</button>
+      </div>
+
+      <div class="plan">
+        <h2>25000 + Promoter Plan</h2>
+        <p>$549.99</p>
+        <button onclick="buyCredits(54999, 25000, 'Promoter')">Buy Now</button>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -125,12 +195,13 @@
         }
       } catch (err) {
         console.error("❌ Error creating checkout:", err);
-        alert("Something went wrong creating your checkout. Try again.");
+        alert("Something went wrong. Please try again.");
       }
     }
   </script>
 </body>
 </html>
+
 
 
 
