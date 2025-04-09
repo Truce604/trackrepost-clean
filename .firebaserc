@@ -1,5 +1,8 @@
 {
   "projects": {
-    "default": "trackrepost-921f8"
-  }
+    "default": "trackrepost-921f8",
+    "trackrepost": "trackrepost-921f8"
+  },
+  "targets": {},
+  "etags": {}
 }
