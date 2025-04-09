@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard - TrackRepost</title>
+
+  <!-- ✅ SEO & Meta -->
+  <link rel="icon" href="/favicon.ico" />
+  <meta name="description" content="Check your credits, badges, and campaign status on TrackRepost — the easiest way to grow on SoundCloud.">
+  <meta property="og:title" content="TrackRepost Dashboard" />
+  <meta property="og:description" content="Manage your campaigns, view credits, and grow your SoundCloud reach with TrackRepost.">
+  <meta property="og:image" content="/images/track-repost-logo.png" />
+  <meta property="og:url" content="https://www.trackrepost.com/dashboard.html" />
+  <meta name="theme-color" content="#0d0d0d" />
+
+  <!-- ✅ Styles & Firebase -->
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+  <script src="/js/firebaseConfig.js"></script>
+  <script>firebase.initializeApp(window.firebaseConfig);</script>
+
+  <style>
+    body {
+      background-color: #0d0d0d;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 40px 20px;
+    }
+
+    .dashboard-card {
+      background-color: #121212;
+      border-radius: 16px;
+      padding: 30px;
+      max-width: 600px;
+      margin: 0 auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.4);
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      margin-bottom: 10px;
+    }
+
+    .user-email {
+      font-size: 1rem;
+      color: #aaa;
+      margin-bottom: 15px;
+    }
+
+    .credits {
+      font-size: 1.2rem;
+      margin: 10px 0;
+    }
+
+    .badge {
+      margin: 10px 0;
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: #ffa500;
+    }
+
+    .logout {
+      margin-top: 20px;
+      background: #ffa500;
+      padding: 10px 20px;
+      border-radius: 8px;
+      color: black;
+      font-weight: bold;
+      cursor: pointer;
+      border: none;
+    }
+
+    .logout:hover {
+      background: #ffbe40;
+    }
+
+    .campaign-list {
+      margin-top: 30px;
+      text-align: left;
+    }
+
+    .campaign {
+      background: #1e1e1e;
+      margin-bottom: 15px;
+      padding: 15px;
+      border-radius: 12px;
+    }
+
+    .campaign h3 {
+      margin: 0;
+      font-size: 1.1rem;
+    }
+
+    .campaign p {
+      font-size: 0.9rem;
+      margin: 5px 0;
+      color: #ccc;
+    }
+
+    a {
+      color: #ffa500;
+    }
+  </style>
+</head>
+<body>
+  <div id="site-header"></div>
+
+  <div class="dashboard-card">
+    <h1>📊 Dashboard</h1>
+    <p class="user-email" id="user-email">Loading...</p>
+    <p class="credits" id="user-credits">Credits: --</p>
+    <p class="badge" id="user-badge">Badge: 🟢 Rookie</p>
+
+    <div id="campaign-list" class="campaign-list"></div>
+
+    <button class="logout" onclick="logout()">Logout</button>
+  </div>
+
+  <script>
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    auth.onAuthStateChanged(async (user) => {
+      if (!user) {
+        window.location.href = "index.html";
+        return;
+      }
+
+      document.getElementById("user-email").textContent = user.email;
+
+      const userRef = db.collection("users").doc(user.uid);
+      const userSnap = await userRef.get();
+      const userData = userSnap.data();
+
+      document.getElementById("user-credits").textContent = `Credits: ${userData.credits || 0}`;
+
+      const badge = userData.badge || { name: "Rookie", emoji: "🟢" };
+      document.getElementById("user-badge").textContent = `Badge: ${badge.emoji} ${badge.name}`;
+
+      const campaignList = document.getElementById("campaign-list");
+      const campaignsSnap = await db.collection("campaigns")
+        .where("userId", "==", user.uid)
+        .get();
+
+      if (campaignsSnap.empty) {
+        campaignList.innerHTML = "<p>No campaigns found.</p>";
+        return;
+      }
+
+      campaignsSnap.forEach(doc => {
+        const data = doc.data();
+        const div = document.createElement("div");
+        div.className = "campaign";
+        div.innerHTML = `
+          <h3>🎵 ${data.title || "Untitled"}</h3>
+          <p>💳 ${data.credits} credits remaining</p>
+          <p><a href="${data.trackUrl}" target="_blank">🔗 View on SoundCloud</a></p>
+        `;
+        campaignList.appendChild(div);
+      });
+    });
+
+    function logout() {
+      auth.signOut().then(() => {
+        window.location.href = "index.html";
+      });
+    }
+  </script>
+
+  <script type="module" src="/js/header.js"></script>
+</body>
+</html>
+
+

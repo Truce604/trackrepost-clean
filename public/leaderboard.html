@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>🏆 Leaderboard - TrackRepost</title>
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+  <script src="/js/firebaseConfig.js"></script>
+  <script>firebase.initializeApp(window.firebaseConfig);</script>
+
+  <style>
+    .leaderboard-container {
+      max-width: 700px;
+      margin: 40px auto;
+      background: #1e1e1e;
+      padding: 20px;
+      border-radius: 12px;
+      color: white;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      color: #fff;
+    }
+
+    th, td {
+      padding: 10px;
+      text-align: left;
+      border-bottom: 1px solid #444;
+    }
+
+    th {
+      background-color: #333;
+    }
+
+    tr:nth-child(even) {
+      background-color: #2a2a2a;
+    }
+
+    tr:hover {
+      background-color: #333;
+    }
+  </style>
+</head>
+<body>
+  <div id="site-header"></div>
+
+  <main class="leaderboard-container">
+    <h2>🏆 Top Reposters - This Month</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>User</th>
+          <th>Reposts</th>
+        </tr>
+      </thead>
+      <tbody id="leaderboard-body">
+        <tr><td colspan="3">Loading...</td></tr>
+      </tbody>
+    </table>
+  </main>
+
+  <footer>
+    <p>© 2025 TrackRepost. All Rights Reserved.</p>
+  </footer>
+
+  <script type="module" src="/js/header.js"></script>
+  <script>
+    const db = firebase.firestore();
+    const body = document.getElementById("leaderboard-body");
+
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    db.collection("reposts")
+      .where("timestamp", ">", firebase.firestore.Timestamp.fromDate(startOfMonth))
+      .get()
+      .then(snapshot => {
+        const counts = {};
+        snapshot.docs.forEach(doc => {
+          const uid = doc.data().userId;
+          counts[uid] = (counts[uid] || 0) + 1;
+        });
+
+        const sorted = Object.entries(counts)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 25);
+
+        if (sorted.length === 0) {
+          body.innerHTML = `<tr><td colspan="3">No reposts yet this month.</td></tr>`;
+          return;
+        }
+
+        body.innerHTML = "";
+        sorted.forEach(([uid, count], i) => {
+          db.collection("users").doc(uid).get().then(userDoc => {
+            const user = userDoc.data() || {};
+            const display = user.displayName || "Anonymous";
+            const row = `
+              <tr>
+                <td>${i + 1}</td>
+                <td>${display}</td>
+                <td>${count}</td>
+              </tr>
+            `;
+            body.insertAdjacentHTML("beforeend", row);
+          });
+        });
+      });
+  </script>
+</body>
+</html>

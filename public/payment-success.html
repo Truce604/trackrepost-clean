@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Payment Success - TrackRepost</title>
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- ✅ Firebase SDKs (compat versions) -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+
+  <!-- ✅ Firebase Config -->
+  <script src="/js/firebaseConfig.js"></script>
+  <script>firebase.initializeApp(window.firebaseConfig);</script>
+
+  <style>
+    .logo-header {
+      max-width: 240px;
+      margin: 40px auto 20px;
+      display: block;
+    }
+    .success-container {
+      text-align: center;
+      padding: 20px;
+    }
+    .success-container h1 {
+      color: green;
+      margin-bottom: 16px;
+    }
+    .success-container p {
+      font-size: 18px;
+      margin-bottom: 20px;
+    }
+    .success-container a {
+      text-decoration: none;
+      background-color: #ffaa00;
+      color: #000;
+      padding: 12px 24px;
+      border-radius: 6px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div id="site-header"></div>
+
+  <main class="success-container">
+    <h1>🎉 Payment Successful!</h1>
+    <p id="message">Processing your credits...</p>
+    <a href="/dashboard.html">Go to Dashboard</a>
+  </main>
+
+  <footer>
+    <p>© 2025 TrackRepost. All rights reserved.</p>
+  </footer>
+
+  <script type="module" src="/js/header.js"></script>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const credits = params.get("credits");
+    const messageEl = document.getElementById("message");
+
+    firebase.auth().onAuthStateChanged((user) => {
+      if (user) {
+        const displayName = user.displayName || "friend";
+        if (credits) {
+          messageEl.textContent = `Hey ${displayName}, you purchased ${credits} credits! 🔥`;
+        } else {
+          messageEl.textContent = `Thanks ${displayName}, your payment was successful!`;
+        }
+      } else {
+        messageEl.textContent = credits
+          ? `You purchased ${credits} credits!`
+          : "Thanks for your payment!";
+      }
+    });
+  </script>
+</body>
+</html>
+
+

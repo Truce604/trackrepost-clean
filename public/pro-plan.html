@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pro Plans - TrackRepost</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+  <script src="/js/firebaseConfig.js"></script>
+  <script>firebase.initializeApp(window.firebaseConfig);</script>
+  <style>
+    body {
+      background: #0d0d0d;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      padding: 30px 20px;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      margin-bottom: 20px;
+    }
+
+    .plan {
+      background: #1a1a1a;
+      padding: 25px;
+      margin: 20px auto;
+      border-radius: 12px;
+      max-width: 500px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    }
+
+    .plan h2 {
+      margin-top: 0;
+      font-size: 1.4rem;
+      color: #ffd700;
+    }
+
+    .plan p {
+      font-size: 1rem;
+      color: #ccc;
+      margin: 10px 0;
+    }
+
+    .plan .price {
+      font-size: 1.2rem;
+      color: #ffa500;
+      margin: 15px 0;
+      font-weight: bold;
+    }
+
+    .plan button {
+      background: #ffa500;
+      color: black;
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+
+    .plan button:hover {
+      background: #ffbe4d;
+    }
+
+    .note {
+      margin-top: 30px;
+      font-size: 0.9rem;
+      color: #888;
+    }
+  </style>
+</head>
+<body>
+  <h1>🚀 Pro Plans</h1>
+
+  <div class="plan">
+    <h2>🎨 Artist Plan</h2>
+    <p>Run multiple campaigns at once</p>
+    <p>Earn a Pro badge on your profile</p>
+    <div class="price">💳 $79.99 (2500 Credits)</div>
+    <button onclick="location.href='credits.html'">Buy Plan</button>
+  </div>
+
+  <div class="plan">
+    <h2>🌐 Network Plan</h2>
+    <p>Everything in Artist Plan + Repost priority</p>
+    <p>More credits = more reach</p>
+    <div class="price">💳 $139.99 (5000 Credits)</div>
+    <button onclick="location.href='credits.html'">Buy Plan</button>
+  </div>
+
+  <div class="plan">
+    <h2>👑 Promoter Plan</h2>
+    <p>Max visibility and boost potential</p>
+    <p>Top-tier promotion & status</p>
+    <div class="price">💳 $549.99 (25000 Credits)</div>
+    <button onclick="location.href='credits.html'">Buy Plan</button>
+  </div>
+
+  <div class="note">
+    All plans activate automatically after purchase.<br/>
+    Plans include credits + unlock Pro features instantly.
+  </div>
+</body>
+</html>
+

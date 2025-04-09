@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrackRepost - Campaigns</title>
+    <link rel="stylesheet" href="styles.css"> <!-- Link to your CSS -->
+    
+    <!-- ✅ Load Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <!-- ✅ Load SoundCloud SDK -->
+    <script src="https://connect.soundcloud.com/sdk.js"></script>
+
+    <!-- ✅ Load Firebase Configuration -->
+    <script src="firebaseConfig.js"></script>
+
+    <!-- ✅ Load Authentication & Script AFTER Firebase -->
+    <script src="auth.js" defer></script>
+</head>
+
+<body>
+    <header>
+        <h1>🔥 Active Campaigns</h1>
+        <p>Explore the campaigns and repost to earn credits!</p>
+    </header>
+
+    <!-- ✅ Genre Filter -->
+    <div class="container">
+        <h2>🎵 Filter Campaigns by Genre</h2>
+        <select id="genreFilter">
+            <option value="all">All Genres</option>
+            <option value="hiphop">Hip-Hop</option>
+            <option value="edm">EDM</option>
+            <option value="rock">Rock</option>
+            <option value="pop">Pop</option>
+            <option value="jazz">Jazz</option>
+        </select>
+        <button onclick="filterCampaigns()">Apply Filter</button>
+    </div>
+
+    <!-- ✅ Campaigns Container -->
+    <div id="campaignsContainer">
+        <p>⏳ Loading campaigns...</p>
+    </div>
+
+    <footer>
+        <p>© 2025 TrackRepost. All Rights Reserved.</p>
+    </footer>
+
+    <script>
+        // ✅ FUNCTION: Load and Display Campaigns
+        let allCampaigns = [];
+
+        function loadCampaigns() {
+            const campaignsDiv = document.getElementById("campaignsContainer");
+
+            firebase.firestore().collection("campaigns").orderBy("timestamp", "desc").onSnapshot(snapshot => {
+                campaignsDiv.innerHTML = "";  // Clear before adding new
+                allCampaigns = []; // Reset campaign list
+
+                if (snapshot.empty) {
+                    campaignsDiv.innerHTML = "<p>No active campaigns available.</p>";
+                } else {
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        const campaignId = doc.id;
+                        allCampaigns.push({ id: campaignId, ...data });
+                    });
+
+                    renderCampaigns(allCampaigns);
+                }
+            });
+        }
+
+        // ✅ FUNCTION: Render Campaigns based on Filter
+        function renderCampaigns(campaigns) {
+            const campaignsDiv = document.getElementById("campaignsContainer");
+            campaignsDiv.innerHTML = "";
+
+            if (campaigns.length === 0) {
+                campaignsDiv.innerHTML = "<p>No campaigns match your selection.</p>";
+                return;
+            }
+
+            campaigns.forEach(data => {
+                const campaignId = data.id;
+                const trackUrl = data.track;
+                const creditsRequired = data.credits || 0;
+                const genre = data.genre || "Unknown Genre";
+
+                campaignsDiv.innerHTML += `
+                    <div class="campaign">
+                        <h3>🔥 ${genre} Promotion</h3>
+                        <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" 
+                            src="https://w.soundcloud.com/player/?url=${encodeURIComponent(trackUrl)}">
+                        </iframe>
+                        <p>💰 Required Credits: ${creditsRequired}</p>
+                        <button onclick="repostTrack('${campaignId}', '${data.owner}', '${trackUrl}')">
+                            Repost & Earn Credits
+                        </button>
+                    </div>
+                `;
+            });
+        }
+
+        // ✅ FUNCTION: Filter Campaigns by Genre
+        function filterCampaigns() {
+            const selectedGenre = document.getElementById("genreFilter").value;
+            if (selectedGenre === "all") {
+                renderCampaigns(allCampaigns);
+            } else {
+                const filteredCampaigns = allCampaigns.filter(campaign => campaign.genre === selectedGenre);
+                renderCampaigns(filteredCampaigns);
+            }
+        }
+
+        // ✅ AUTOLOAD CAMPAIGNS ON PAGE LOAD
+        document.addEventListener("DOMContentLoaded", loadCampaigns);
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>My Profile - TrackRepost</title>
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+  <script src="/js/firebaseConfig.js"></script>
+  <script>firebase.initializeApp(window.firebaseConfig);</script>
+
+  <style>
+    .profile-container {
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #1c1c1c;
+      border-radius: 12px;
+      color: #fff;
+    }
+
+    .profile-container h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .profile-info p {
+      margin: 10px 0;
+      font-size: 16px;
+    }
+
+    .profile-info a {
+      color: #4fc3f7;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="site-header"></div>
+
+  <main class="profile-container">
+    <h2>👤 My Profile</h2>
+    <div class="profile-info" id="profile-info">Loading...</div>
+  </main>
+
+  <footer>
+    <p>© 2025 TrackRepost. All Rights Reserved.</p>
+  </footer>
+
+  <script type="module" src="/js/header.js"></script>
+  <script>
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+    const profileInfo = document.getElementById("profile-info");
+
+    auth.onAuthStateChanged(async (user) => {
+      if (!user) {
+        profileInfo.innerHTML = "<p>❌ You must be logged in to view this page.</p>";
+        return;
+      }
+
+      const doc = await db.collection("users").doc(user.uid).get();
+      const data = doc.exists ? doc.data() : {};
+
+      profileInfo.innerHTML = `
+        <p><strong>Name:</strong> ${user.displayName || "Anonymous"}</p>
+        <p><strong>Email:</strong> ${user.email}</p>
+        <p><strong>Credits:</strong> ${data.credits || 0}</p>
+        <p><strong>Plan:</strong> ${data.isPro ? data.plan || "Pro" : "Free"}</p>
+        ${
+          data.soundcloud?.url
+            ? `<p><strong>SoundCloud:</strong> <a href="${data.soundcloud.url}" target="_blank">${data.soundcloud.handle}</a></p>`
+            : `<p><strong>SoundCloud:</strong> Not connected</p>`
+        }
+      `;
+    });
+  </script>
+</body>
+</html>

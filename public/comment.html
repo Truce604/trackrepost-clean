@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leave a Comment & Earn Credits | TrackRepost</title>
+    <link rel="stylesheet" href="styles.css">
+
+    <!-- ✅ Load Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <!-- ✅ Load Firebase Config FIRST -->
+    <script src="firebaseConfig.js" defer></script>
+
+    <!-- ✅ Load Main JavaScript AFTER Firebase -->
+    <script src="comment.js" defer></script>
+</head>
+
+<body>
+
+    <header>
+        <h1>🎵 Leave a Comment & Earn Credits</h1>
+        <p>Boost engagement & earn extra credits!</p>
+        <nav>
+            <ul>
+                <li><a href="index.html">🏠 Home</a></li>
+                <li><a href="repost.html">🔄 Repost & Earn</a></li>
+                <li><a href="subscribe.html">💳 Buy Credits</a></li>
+                <li><button id="logoutBtn" style="display:none;">🚪 Logout</button></li>
+            </ul>
+        </nav>
+    </header>
+
+    <div class="container">
+        <h2>🎶 Track Details</h2>
+        <div id="trackContainer">
+            <p>Loading track...</p>
+        </div>
+    </div>
+
+    <!-- ✅ Comment Section -->
+    <div class="container">
+        <h2>💬 Leave a Comment</h2>
+        <textarea id="commentText" placeholder="Type your comment here..."></textarea>
+        <button id="submitComment">Submit Comment & Earn 2 Credits</button>
+    </div>
+
+    <!-- ✅ Like & Follow Section -->
+    <div class="container">
+        <h2>👍 Like & Follow</h2>
+        <button id="likeTrack">❤️ Like Track (Earn 1 Credit)</button>
+        <button id="followUser">➕ Follow Artist (Earn 2 Credits)</button>
+    </div>
+
+    <footer>
+        <p>© 2025 TrackRepost. All Rights Reserved.</p>
+    </footer>
+
+</body>
+</html>

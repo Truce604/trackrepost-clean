@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buy Credits - TrackRepost</title>
+    <link rel="stylesheet" href="styles.css">
+
+    <!-- ✅ Load Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <!-- ✅ Load Firebase Config -->
+    <script src="firebaseConfig.js" defer></script>
+
+    <!-- ✅ Load Square Payment Script -->
+    <script type="text/javascript" src="https://web.squarecdn.com/v1/square.js"></script>
+
+    <!-- ✅ Load Subscribe Script -->
+    <script src="subscribe.js" defer></script>
+</head>
+
+<body>
+
+    <header>
+        <h1>💳 Buy Credits</h1>
+        <p>Purchase credits to boost your campaigns.</p>
+    </header>
+
+    <div class="container">
+        <h2>Choose a Credit Package</h2>
+        <div class="credit-packages">
+            <button class="buy-credit" data-amount="24.99" data-credits="500">Buy 500 Credits - $24.99</button>
+            <button class="buy-credit" data-amount="34.99" data-credits="1000">Buy 1000 Credits - $34.99</button>
+            <button class="buy-credit" data-amount="79.99" data-credits="2500">Buy 2500 Credits - $79.99</button>
+            <button class="buy-credit" data-amount="139.99" data-credits="5000">Buy 5000 Credits - $139.99</button>
+            <button class="buy-credit" data-amount="549.99" data-credits="25000">Buy 25000 Credits - $549.99</button>
+        </div>
+    </div>
+
+    <footer>
+        <p>© 2025 TrackRepost. All Rights Reserved.</p>
+    </footer>
+
+</body>
+</html>
+
+

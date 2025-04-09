@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TrackRepost – Grow on SoundCloud</title>
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- ✅ Favicon -->
+  <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+
+  <!-- ✅ SEO Meta -->
+  <meta name="description" content="TrackRepost is the easiest way to promote your music on SoundCloud. Earn credits by reposting, then submit your track to boost your reach." />
+  <meta name="keywords" content="TrackRepost, SoundCloud promo, repost exchange, boost tracks, grow followers" />
+  <meta name="author" content="TrackRepost Team" />
+
+  <!-- ✅ Open Graph (Facebook, Discord, etc.) -->
+  <meta property="og:title" content="TrackRepost – Grow on SoundCloud" />
+  <meta property="og:description" content="Repost tracks, earn credits, and promote your music. Join TrackRepost for free." />
+  <meta property="og:image" content="/assets/trackrepost-social.jpg" />
+  <meta property="og:url" content="https://www.trackrepost.com/" />
+  <meta property="og:type" content="website" />
+
+  <!-- ✅ Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="TrackRepost – Grow on SoundCloud" />
+  <meta name="twitter:description" content="Repost tracks, earn credits, and promote your music. Join TrackRepost for free." />
+  <meta name="twitter:image" content="/assets/trackrepost-social.jpg" />
+
+  <!-- ✅ Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+  <script src="/js/firebaseConfig.js"></script>
+  <script>firebase.initializeApp(window.firebaseConfig);</script>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #0d0d0d;
+      color: white;
+    }
+
+    .hero {
+      background: linear-gradient(145deg, #0e0e0e, #1a1a1a);
+      padding: 80px 20px;
+      text-align: center;
+    }
+
+    .hero-inner h1 {
+      font-size: 36px;
+      margin-bottom: 10px;
+    }
+
+    .hero-inner p {
+      font-size: 18px;
+      margin-bottom: 30px;
+      color: #ccc;
+    }
+
+    .button-grid {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 15px;
+    }
+
+    .button {
+      background: #ff9900;
+      color: black;
+      padding: 14px 26px;
+      border-radius: 10px;
+      font-weight: bold;
+      font-size: 1rem;
+      text-decoration: none;
+      transition: background 0.3s ease;
+    }
+
+    .button:hover {
+      background: #e68300;
+    }
+
+    footer {
+      background-color: #111;
+      color: #aaa;
+      text-align: center;
+      padding: 20px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div id="site-header"></div>
+
+  <header class="hero">
+    <div class="hero-inner">
+      <h1>🚀 Promote Your Track. Earn Credits. Grow Fast.</h1>
+      <p>TrackRepost helps artists grow on SoundCloud by earning and spending credits through reposts.</p>
+      <div class="button-grid">
+        <a href="explore.html" class="button">🌎 Explore Campaigns</a>
+        <a href="submit-campaign.html" class="button">🎯 Submit Your Track</a>
+        <a href="credits.html" class="button">💳 Buy Credits</a>
+        <a href="dashboard.html" class="button">📊 Dashboard</a>
+        <a href="pro-plan.html" class="button">⭐ Go Pro</a>
+      </div>
+    </div>
+  </header>
+
+  <footer>
+    <p>© 2025 TrackRepost. All Rights Reserved.</p>
+  </footer>
+
+  <script type="module" src="/js/header.js"></script>
+</body>
+</html>
+
+
+

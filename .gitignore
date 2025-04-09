@@ -1,0 +1,40 @@
+# Ignore node_modules and dependencies
+node_modules/
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Ignore environment variables and sensitive files
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+.env.*
+.env.txt
+# Ignore build output
+.next/
+out/
+dist/
+.vercel/
+
+# Ignore logs
+logs
+*.log
+logs/**/*.log
+
+# Ignore OS-specific and editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# Ignore Firebase and Square config files if not meant to be public
+firebase.json
+firestore.indexes.json
+firestore.rules
+
+# Ignore static exports
+/static/**
+.vercel

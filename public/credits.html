@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Buy Credits - TrackRepost</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <h1>💳 Buy Credits</h1>
+  </header>
+
+  <main style="text-align:center; padding: 20px;">
+    <p id="creditBalance">Loading credits...</p>
+    <p id="status"></p>
+
+    <button class="buy-btn" data-credits="500">Buy 500 Credits</button><br/><br/>
+    <button class="buy-btn" data-credits="1000">Buy 1000 Credits</button><br/><br/>
+    <button class="buy-btn" data-credits="2500" data-plan="Artist">Buy 2500 + Artist Plan</button><br/><br/>
+    <button class="buy-btn" data-credits="5000" data-plan="Network">Buy 5000 + Network Plan</button><br/><br/>
+    <button class="buy-btn" data-credits="25000" data-plan="Promoter">Buy 25,000 + Promoter Plan</button><br/><br/>
+
+    <hr style="margin: 40px 0;" />
+
+    <h2>🎁 Got a Promo Code?</h2>
+    <input type="text" id="promoCode" placeholder="Enter coupon code..." style="padding: 10px; width: 250px; border-radius: 8px; border: none;">
+    <button id="applyCoupon" style="margin-left: 10px; padding: 10px 20px; background: #4caf50; color: white; border: none; border-radius: 8px; font-weight: bold;">Apply</button>
+    <p id="couponStatus" style="margin-top: 10px;"></p>
+  </main>
+
+  <footer style="text-align:center; padding: 20px;">
+    <p>© 2025 TrackRepost. All Rights Reserved.</p>
+  </footer>
+
+  <!-- ✅ Firebase SDKs and logic at the bottom (so firebase is defined before use) -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+  <script src="/js/firebaseConfig.js"></script>
+
+  <script>
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    let currentUser = null;
+
+    auth.onAuthStateChanged(async (user) => {
+      if (!user) {
+        document.getElementById("creditBalance").textContent = "Please log in.";
+        return;
+      }
+
+      currentUser = user;
+
+      const userRef = db.collection("users").doc(user.uid);
+      const snap = await userRef.get();
+      const userData = snap.data();
+
+      document.getElementById("creditBalance").textContent =
+        `You currently have ${userData.credits || 0} credits.`;
+    });
+
+    document.querySelectorAll(".buy-btn").forEach((button) => {
+      button.addEventListener("click", async () => {
+        if (!currentUser) {
+          alert("Please log in to buy credits.");
+          return;
+        }
+
+        const credits = parseInt(button.dataset.credits, 10);
+        const plan = button.dataset.plan || null;
+        const userId = currentUser.uid;
+
+        document.getElementById("status").textContent = "Redirecting to payment...";
+
+        try {
+          const response = await fetch("/api/square/checkout", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ credits, userId, plan }),
+          });
+
+          const { checkoutUrl } = await response.json();
+
+          if (checkoutUrl) {
+            window.location.href = checkoutUrl;
+          } else {
+            document.getElementById("status").textContent = "❌ Failed to create checkout session.";
+          }
+        } catch (err) {
+          console.error("❌ Error creating checkout:", err);
+          document.getElementById("status").textContent = "❌ Something went wrong. Please try again.";
+        }
+      });
+    });
+
+    document.getElementById("applyCoupon").addEventListener("click", async () => {
+      const code = document.getElementById("promoCode").value.trim().toUpperCase();
+      const statusEl = document.getElementById("couponStatus");
+
+      if (!currentUser) {
+        statusEl.textContent = "Please log in to apply a coupon.";
+        return;
+      }
+
+      if (!code) {
+        statusEl.textContent = "❌ Please enter a coupon code.";
+        return;
+      }
+
+      const usedRef = db.collection("users").doc(currentUser.uid);
+      const usedSnap = await usedRef.get();
+      const used = usedSnap.data()?.usedCoupons || [];
+
+      if (used.includes(code)) {
+        statusEl.textContent = "⚠️ You've already used this coupon.";
+        return;
+      }
+
+      if (code === "LAUNCH100") {
+        await db.runTransaction(async (tx) => {
+          tx.update(usedRef, {
+            credits: firebase.firestore.FieldValue.increment(100),
+            usedCoupons: firebase.firestore.FieldValue.arrayUnion(code),
+          });
+        });
+
+        statusEl.textContent = "🎉 Coupon applied! 100 credits added.";
+      } else {
+        statusEl.textContent = "❌ Invalid or expired coupon.";
+      }
+    });
+  </script>
+</body>
+</html>
+
+
+
+
+
