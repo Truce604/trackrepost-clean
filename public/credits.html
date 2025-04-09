@@ -16,12 +16,13 @@
 
   <button onclick="buyCredits(2499, 500)">Buy 500 Credits ($24.99)</button>
   <button onclick="buyCredits(3499, 1000)">Buy 1000 Credits ($34.99)</button>
-  <button onclick="buyCredits(7999, 2500, 'Artist')">Buy 2500 Credits + Artist Plan ($79.99)</button>
-  <button onclick="buyCredits(13999, 5000, 'Network')">Buy 5000 Credits + Network Plan ($139.99)</button>
-  <button onclick="buyCredits(54999, 25000, 'Promoter')">Buy 25000 Credits + Promoter Plan ($549.99)</button>
+  <button onclick="buyCredits(7999, 2500, 'Artist')">2500 Credits + Artist Plan ($79.99)</button>
+  <button onclick="buyCredits(13999, 5000, 'Network')">5000 Credits + Network Plan ($139.99)</button>
+  <button onclick="buyCredits(54999, 25000, 'Promoter')">25000 Credits + Promoter Plan ($549.99)</button>
 
   <script>
     let currentUser;
+
     firebase.auth().onAuthStateChanged(async (user) => {
       if (!user) {
         document.body.innerHTML = "<p>Please log in to buy credits.</p>";
@@ -41,8 +42,10 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            amount, credits, plan,
-            userId: currentUser.uid
+            amount,
+            credits,
+            userId: currentUser.uid,
+            plan
           })
         });
 
@@ -54,12 +57,13 @@
         }
       } catch (err) {
         console.error("❌ Error creating checkout:", err);
-        alert("Error creating checkout");
+        alert("Something went wrong. Please try again.");
       }
     }
   </script>
 </body>
 </html>
+
 
 
 
