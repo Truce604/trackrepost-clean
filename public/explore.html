@@ -9,7 +9,6 @@
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
   <script src="/js/firebaseConfig.js"></script>
-  <script>firebase.initializeApp(window.firebaseConfig);</script>
   <style>
     .campaign-card {
       display: flex;
@@ -102,46 +101,78 @@
   </footer>
 
   <script>
+    // Ensure config exists
+    if (!window.firebaseConfig) {
+      window.firebaseConfig = {
+        apiKey: "YOUR_API_KEY",
+        authDomain: "trackrepost-921f8.firebaseapp.com",
+        projectId: "trackrepost-921f8",
+        storageBucket: "trackrepost-921f8.appspot.com",
+        messagingSenderId: "YOUR_SENDER_ID",
+        appId: "YOUR_APP_ID"
+      };
+    }
+
+    // Initialize Firebase
+    if (!firebase.apps.length) {
+      firebase.initializeApp(window.firebaseConfig);
+    }
+
+    const auth = firebase.auth();
     const db = firebase.firestore();
     const container = document.getElementById("campaign-list");
 
-    async function loadCampaigns() {
-      const snapshot = await db.collection("campaigns").orderBy("createdAt", "desc").get();
-      container.innerHTML = "";
-
-      if (snapshot.empty) {
-        container.innerHTML = "<p>No campaigns found.</p>";
+    // Ensure login before showing campaigns
+    auth.onAuthStateChanged(async (user) => {
+      if (!user) {
+        window.location.href = "/index.html";
         return;
       }
+      loadCampaigns();
+    });
 
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        const div = document.createElement("div");
-        div.className = "campaign-card";
+    async function loadCampaigns() {
+      try {
+        const snapshot = await db.collection("campaigns").orderBy("createdAt", "desc").get();
+        container.innerHTML = "";
 
-        const image = document.createElement("img");
-        image.src = data.artworkUrl || "/assets/default-art.png";
-        image.alt = "Artwork";
+        if (snapshot.empty) {
+          container.innerHTML = "<p>No campaigns found.</p>";
+          return;
+        }
 
-        const info = document.createElement("div");
-        info.className = "campaign-info";
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          const div = document.createElement("div");
+          div.className = "campaign-card";
 
-        const commentInputId = `comment-${doc.id}`;
-        const likeCheckboxId = `like-${doc.id}`;
+          const image = document.createElement("img");
+          image.src = data.artworkUrl || "/assets/default-art.png";
+          image.alt = "Artwork";
 
-        info.innerHTML = `
-          <h3>${data.title || "Untitled"}</h3>
-          <p>👤 ${data.artist || "Unknown Artist"}</p>
-          <p>🎧 ${data.genre || "Unknown Genre"} | 💳 ${data.credits} credits</p>
-          <label><input type="checkbox" id="${likeCheckboxId}" checked /> 👍 Like this track (+1)</label>
-          <input type="text" id="${commentInputId}" placeholder="Leave a comment (optional)" />
-          <a class="button" href="#" onclick="handleRepost('${doc.id}')">Repost This</a>
-        `;
+          const info = document.createElement("div");
+          info.className = "campaign-info";
 
-        div.appendChild(image);
-        div.appendChild(info);
-        container.appendChild(div);
-      });
+          const commentInputId = `comment-${doc.id}`;
+          const likeCheckboxId = `like-${doc.id}`;
+
+          info.innerHTML = `
+            <h3>${data.title || "Untitled"}</h3>
+            <p>👤 ${data.artist || "Unknown Artist"}</p>
+            <p>🎧 ${data.genre || "Unknown Genre"} | 💳 ${data.credits} credits</p>
+            <label><input type="checkbox" id="${likeCheckboxId}" checked /> 👍 Like this track (+1)</label>
+            <input type="text" id="${commentInputId}" placeholder="Leave a comment (optional)" />
+            <a class="button" href="#" onclick="handleRepost('${doc.id}')">Repost This</a>
+          `;
+
+          div.appendChild(image);
+          div.appendChild(info);
+          container.appendChild(div);
+        });
+      } catch (err) {
+        console.error("Error loading campaigns:", err);
+        container.innerHTML = "<p>⚠️ Failed to load campaigns. Try again later.</p>";
+      }
     }
 
     function handleRepost(id) {
@@ -155,8 +186,6 @@
       }
       window.location.href = url.toString();
     }
-
-    loadCampaigns();
   </script>
 </body>
 </html>
