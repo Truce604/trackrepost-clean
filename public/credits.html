@@ -14,64 +14,86 @@
   <style>
     body {
       margin: 0;
-      background: #111;
-      color: #fff;
       font-family: 'Segoe UI', sans-serif;
+      background: #0e0e0e;
+      color: #fff;
+    }
+
+    #main {
+      max-width: 600px;
+      margin: 80px auto;
       padding: 20px;
     }
-    .container {
-      max-width: 600px;
-      margin: auto;
-    }
+
     h1 {
-      font-size: 26px;
+      font-size: 28px;
       margin-bottom: 10px;
     }
-    p {
-      color: #ccc;
-    }
-    .credit-balance {
+
+    #credit-balance {
       font-size: 18px;
-      margin-bottom: 20px;
+      margin-bottom: 30px;
+      color: #bbb;
     }
+
     .credit-button {
       display: block;
       width: 100%;
-      margin: 10px 0;
-      padding: 14px;
-      background: #ffb800;
-      color: #000;
+      margin: 12px 0;
+      padding: 16px;
+      font-size: 17px;
       font-weight: bold;
-      font-size: 16px;
+      color: #000;
+      background: linear-gradient(135deg, #FFD700, #FFB800);
       border: none;
-      border-radius: 8px;
+      border-radius: 10px;
       cursor: pointer;
-      transition: 0.2s;
+      transition: all 0.2s ease;
     }
+
     .credit-button:hover {
-      background: #ffc933;
+      transform: scale(1.03);
+      background: linear-gradient(135deg, #FFEA00, #FFC700);
+    }
+
+    .credit-button:active {
+      transform: scale(0.98);
+    }
+
+    .plan-note {
+      font-size: 13px;
+      color: #888;
+      margin-top: -8px;
+      margin-bottom: 20px;
+      text-align: center;
     }
   </style>
 </head>
 <body>
   <div id="header"></div>
 
-  <div class="container">
+  <div id="main">
     <h1>Buy Credits</h1>
-    <p class="credit-balance">Your Credits: <span id="credit-count">Loading...</span></p>
+    <p id="credit-balance">Your current balance: <span id="credit-count">Loading...</span></p>
 
     <button class="credit-button" onclick="buyCredits(2499, 500)">500 Credits – $24.99</button>
     <button class="credit-button" onclick="buyCredits(3499, 1000)">1000 Credits – $34.99</button>
-    <button class="credit-button" onclick="buyCredits(7999, 2500, 'Artist')">2500 + Artist Plan – $79.99</button>
-    <button class="credit-button" onclick="buyCredits(13999, 5000, 'Network')">5000 + Network Plan – $139.99</button>
-    <button class="credit-button" onclick="buyCredits(54999, 25000, 'Promoter')">25K + Promoter Plan – $549.99</button>
+    <button class="credit-button" onclick="buyCredits(7999, 2500, 'Artist')">2500 Credits + Artist Plan – $79.99</button>
+    <p class="plan-note">Includes 1 month of Artist Plan features</p>
+
+    <button class="credit-button" onclick="buyCredits(13999, 5000, 'Network')">5000 Credits + Network Plan – $139.99</button>
+    <p class="plan-note">Includes 1 month of Network Plan features</p>
+
+    <button class="credit-button" onclick="buyCredits(54999, 25000, 'Promoter')">25000 Credits + Promoter Plan – $549.99</button>
+    <p class="plan-note">Includes 1 month of Promoter Plan features</p>
   </div>
 
   <script>
     let currentUser;
+
     firebase.auth().onAuthStateChanged(async (user) => {
       if (!user) {
-        document.querySelector('.container').innerHTML = "<p>Please log in to buy credits.</p>";
+        document.getElementById("main").innerHTML = "<p>Please log in to buy credits.</p>";
         return;
       }
 
@@ -109,6 +131,7 @@
   </script>
 </body>
 </html>
+
 
 
 
