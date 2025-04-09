@@ -1,5 +1,5 @@
-const functions = require('firebase-functions');
-const admin = require('firebase-admin');
+const functions = require("firebase-functions");
+const admin = require("firebase-admin");
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -8,9 +8,9 @@ const db = admin.firestore();
 exports.assignCreditsOnSignup = functions.auth.user().onCreate(async (user) => {
   const uid = user.uid;
 
-  await db.collection('users').doc(uid).set({
+  await db.collection("users").doc(uid).set({
     credits: 30,
-    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    createdAt: new Date(),
     email: user.email || null,
     displayName: user.displayName || null,
   }, { merge: true });
