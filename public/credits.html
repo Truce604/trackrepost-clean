@@ -4,28 +4,74 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Buy Credits - TrackRepost</title>
+  <link rel="icon" href="/favicon.ico" />
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
   <script src="/js/firebaseConfig.js"></script>
+  <script src="/js/auth-check.js"></script>
+  <script src="/js/header.js" defer></script>
+  <style>
+    body {
+      margin: 0;
+      background: #111;
+      color: #fff;
+      font-family: 'Segoe UI', sans-serif;
+      padding: 20px;
+    }
+    .container {
+      max-width: 600px;
+      margin: auto;
+    }
+    h1 {
+      font-size: 26px;
+      margin-bottom: 10px;
+    }
+    p {
+      color: #ccc;
+    }
+    .credit-balance {
+      font-size: 18px;
+      margin-bottom: 20px;
+    }
+    .credit-button {
+      display: block;
+      width: 100%;
+      margin: 10px 0;
+      padding: 14px;
+      background: #ffb800;
+      color: #000;
+      font-weight: bold;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .credit-button:hover {
+      background: #ffc933;
+    }
+  </style>
 </head>
-<body style="padding: 20px; font-family: sans-serif;">
-  <h1>Buy Credits</h1>
+<body>
+  <div id="header"></div>
 
-  <p>Your Credits: <span id="credit-balance">Loading...</span></p>
+  <div class="container">
+    <h1>Buy Credits</h1>
+    <p class="credit-balance">Your Credits: <span id="credit-count">Loading...</span></p>
 
-  <button onclick="buyCredits(2499, 500)">Buy 500 Credits ($24.99)</button>
-  <button onclick="buyCredits(3499, 1000)">Buy 1000 Credits ($34.99)</button>
-  <button onclick="buyCredits(7999, 2500, 'Artist')">2500 Credits + Artist Plan ($79.99)</button>
-  <button onclick="buyCredits(13999, 5000, 'Network')">5000 Credits + Network Plan ($139.99)</button>
-  <button onclick="buyCredits(54999, 25000, 'Promoter')">25000 Credits + Promoter Plan ($549.99)</button>
+    <button class="credit-button" onclick="buyCredits(2499, 500)">500 Credits – $24.99</button>
+    <button class="credit-button" onclick="buyCredits(3499, 1000)">1000 Credits – $34.99</button>
+    <button class="credit-button" onclick="buyCredits(7999, 2500, 'Artist')">2500 + Artist Plan – $79.99</button>
+    <button class="credit-button" onclick="buyCredits(13999, 5000, 'Network')">5000 + Network Plan – $139.99</button>
+    <button class="credit-button" onclick="buyCredits(54999, 25000, 'Promoter')">25K + Promoter Plan – $549.99</button>
+  </div>
 
   <script>
     let currentUser;
-
     firebase.auth().onAuthStateChanged(async (user) => {
       if (!user) {
-        document.body.innerHTML = "<p>Please log in to buy credits.</p>";
+        document.querySelector('.container').innerHTML = "<p>Please log in to buy credits.</p>";
         return;
       }
 
@@ -33,7 +79,7 @@
       const db = firebase.firestore();
       const userRef = db.collection("users").doc(user.uid);
       const doc = await userRef.get();
-      document.getElementById("credit-balance").textContent = doc.data().credits || 0;
+      document.getElementById("credit-count").textContent = doc.data().credits || 0;
     });
 
     async function buyCredits(amount, credits, plan = null) {
@@ -57,12 +103,13 @@
         }
       } catch (err) {
         console.error("❌ Error creating checkout:", err);
-        alert("Something went wrong. Please try again.");
+        alert("Something went wrong creating your checkout. Try again.");
       }
     }
   </script>
 </body>
 </html>
+
 
 
 
