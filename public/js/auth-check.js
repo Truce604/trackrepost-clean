@@ -1,4 +1,5 @@
 // public/js/auth-check.js
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import {
   getAuth,
@@ -13,22 +14,20 @@ import {
   setDoc,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-import { firebaseConfig } from "../firebaseConfig.js";
 
-// 🔥 Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// ✅ Use window.firebaseConfig which is loaded via <script> before this
+const app = initializeApp(window.firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
-// 🌐 Auth State Listener
+// ✅ Auth listener
 onAuthStateChanged(auth, async (user) => {
   const loginUI = document.getElementById("login-ui");
 
   if (user) {
     if (loginUI) loginUI.style.display = "none";
 
-    // ✅ Check if user exists in Firestore, if not — create
     const userRef = doc(db, "users", user.uid);
     const userSnap = await getDoc(userRef);
 
@@ -36,7 +35,7 @@ onAuthStateChanged(auth, async (user) => {
       await setDoc(userRef, {
         displayName: user.displayName || "",
         email: user.email || "",
-        credits: 30, // initial credits
+        credits: 30,
         plan: "Free",
         createdAt: serverTimestamp()
       });
@@ -48,15 +47,18 @@ onAuthStateChanged(auth, async (user) => {
   } else {
     if (loginUI) loginUI.style.display = "block";
 
-    // 🚪 Force redirect to index.html if not logged in
-    const publicPages = ["/index.html", "/", "/connect-soundcloud.html"];
-    if (!publicPages.includes(window.location.pathname)) {
+    // ❌ Redirect if not logged in and not on public pages
+    const publicPages = ["/", "/index.html", "/connect-soundcloud.html"];
+    const currentPath = window.location.pathname;
+
+    if (!publicPages.includes(currentPath)) {
+      console.warn("⛔ Not authenticated, redirecting to home.");
       window.location.href = "/index.html";
     }
   }
 });
 
-// 🧠 Expose login trigger for use in login button
+// ✅ Login button logic
 window.loginWithGoogle = async () => {
   try {
     await signInWithPopup(auth, provider);
@@ -65,3 +67,4 @@ window.loginWithGoogle = async () => {
     alert("Google login failed. Please try again.");
   }
 };
+
