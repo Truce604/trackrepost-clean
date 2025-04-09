@@ -55,9 +55,14 @@ firebase-debug.*
 # ✅ TrackRepost: Secret Files
 # =============================
 
-# 🔥 Never commit your Firebase config
+# 🔥 Never commit your Firebase config to GitHub
 /public/js/firebaseConfig.js
 
-# 🔥 Optional: block static files (if you're exporting builds)
-static/
-public/static/
+# 🔥 Optional: block static files (if exporting builds)
+/static/
+/public/static/
+
+# =============================
+# ✅ GitHub Actions & Workflow
+# =============================
+.github/workflows/*
