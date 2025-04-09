@@ -1,12 +1,13 @@
-// File: api/square/checkout.js
-
+// /api/square/checkout.js
 import { Client, Environment } from 'square';
 
+// ✅ Initialize Square Client
 const client = new Client({
   accessToken: process.env.SQUARE_ACCESS_TOKEN,
-  environment: 'production',
+  environment: 'production', // or 'sandbox' for testing
 });
 
+// ✅ Main API route
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).send('Method Not Allowed');
@@ -15,6 +16,7 @@ export default async function handler(req, res) {
   try {
     const { amount, credits, userId, plan } = req.body;
 
+    // ✅ Create checkout session
     const response = await client.checkoutApi.createCheckout(
       process.env.SQUARE_LOCATION_ID,
       {
@@ -27,8 +29,8 @@ export default async function handler(req, res) {
                 name: `${credits} Credits`,
                 quantity: '1',
                 basePriceMoney: {
-                  amount: parseInt(amount),
-                  currency: 'USD',
+                  amount: parseInt(amount), // e.g. 2499 for $24.99
+                  currency: 'CAD', // ✅ Canadian dollars
                 },
               },
             ],
@@ -39,9 +41,12 @@ export default async function handler(req, res) {
       }
     );
 
-    res.status(200).json({ url: response.result.checkout.checkoutPageUrl });
+    res.status(200).json({
+      url: response.result.checkout.checkoutPageUrl,
+    });
+
   } catch (err) {
-    console.error('❌ Checkout creation failed:', err);
+    console.error("❌ Square Checkout Error:", err);
     res.status(500).json({ error: 'Checkout creation failed' });
   }
 }
