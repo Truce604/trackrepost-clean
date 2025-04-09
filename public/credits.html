@@ -3,42 +3,42 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Buy Credits - TrackRepost</title>
+  <title>💸 Buy Boosts - TrackRepost</title>
   <link rel="icon" href="/favicon.ico" />
+  <script type="module" src="/js/auth-check.js"></script>
+  <script type="module" src="/js/header.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
   <script src="/js/firebaseConfig.js"></script>
-  <script src="/js/auth-check.js"></script>
-  <script src="/js/header.js" defer></script>
   <style>
     body {
       margin: 0;
-      background: #0b0b0b;
-      color: #fff;
       font-family: 'Segoe UI', sans-serif;
+      background: #0d0d0d;
+      color: #fff;
     }
 
     #main {
-      max-width: 800px;
-      margin: 80px auto;
+      max-width: 700px;
+      margin: 80px auto 60px;
       padding: 20px;
     }
 
     h1 {
-      font-size: 28px;
-      margin-bottom: 10px;
       text-align: center;
+      font-size: 32px;
+      margin-bottom: 10px;
     }
 
-    #credit-balance {
-      font-size: 18px;
-      margin: 20px auto 40px;
-      background: #1d1d1d;
-      padding: 20px;
+    .credit-balance {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 12px;
+      padding: 24px;
       text-align: center;
-      border-radius: 10px;
-      max-width: 400px;
+      font-size: 20px;
+      margin: 25px 0 40px;
     }
 
     .plans {
@@ -48,39 +48,40 @@
     }
 
     .plan {
-      background: #161616;
-      border-radius: 12px;
+      background: #141414;
+      border-radius: 14px;
       padding: 20px;
       text-align: center;
-      border: 1px solid #333;
-      transition: all 0.2s ease;
+      border: 1px solid #2a2a2a;
+      transition: 0.2s ease;
     }
 
     .plan:hover {
       border-color: #ffb800;
+      transform: scale(1.02);
     }
 
     .plan h2 {
-      margin: 0 0 6px;
-      font-size: 20px;
+      margin: 0;
+      font-size: 22px;
     }
 
     .plan p {
-      margin: 4px 0 16px;
-      font-size: 14px;
+      font-size: 15px;
       color: #aaa;
+      margin: 8px 0 16px;
     }
 
     .plan button {
-      padding: 12px;
-      width: 100%;
       background: linear-gradient(135deg, #FFD700, #FFB800);
       color: #000;
+      font-weight: bold;
+      padding: 12px 16px;
       border: none;
       border-radius: 8px;
-      font-weight: bold;
       cursor: pointer;
       font-size: 15px;
+      width: 100%;
     }
 
     .plan button:hover {
@@ -92,34 +93,37 @@
   <div id="header"></div>
 
   <div id="main">
-    <h1>Buy Credits</h1>
-    <div id="credit-balance">Your Current Balance: <span id="credit-count">Loading...</span></div>
+    <h1>💸 Buy Boosts</h1>
+
+    <div class="credit-balance">
+      Your Credit Balance: <span id="credit-count">Loading...</span>
+    </div>
 
     <div class="plans">
       <div class="plan">
-        <h2>500 Credits</h2>
-        <p>$24.99</p>
-        <button onclick="buyCredits(2499, 500)">Buy Now</button>
+        <h2>🎯 500 Credits</h2>
+        <p>Perfect for a single track push</p>
+        <button onclick="buyCredits(2499, 500)">Buy for $24.99</button>
       </div>
       <div class="plan">
-        <h2>1000 Credits</h2>
-        <p>$34.99</p>
-        <button onclick="buyCredits(3499, 1000)">Buy Now</button>
+        <h2>📈 1000 Credits</h2>
+        <p>Double boost for $34.99</p>
+        <button onclick="buyCredits(3499, 1000)">Buy for $34.99</button>
       </div>
       <div class="plan">
-        <h2>2500 + Artist Plan</h2>
-        <p>$79.99</p>
-        <button onclick="buyCredits(7999, 2500, 'Artist')">Buy Now</button>
+        <h2>🔥 2500 + Artist Plan</h2>
+        <p>Includes 1 month Pro Features</p>
+        <button onclick="buyCredits(7999, 2500, 'Artist')">Buy for $79.99</button>
       </div>
       <div class="plan">
-        <h2>5000 + Network Plan</h2>
-        <p>$139.99</p>
-        <button onclick="buyCredits(13999, 5000, 'Network')">Buy Now</button>
+        <h2>🚀 5000 + Network Plan</h2>
+        <p>Massive reach, pro tools unlocked</p>
+        <button onclick="buyCredits(13999, 5000, 'Network')">Buy for $139.99</button>
       </div>
       <div class="plan">
-        <h2>25000 + Promoter Plan</h2>
-        <p>$549.99</p>
-        <button onclick="buyCredits(54999, 25000, 'Promoter')">Buy Now</button>
+        <h2>👑 25000 + Promoter Plan</h2>
+        <p>Max credits, elite-level tools</p>
+        <button onclick="buyCredits(54999, 25000, 'Promoter')">Buy for $549.99</button>
       </div>
     </div>
   </div>
@@ -129,7 +133,6 @@
 
     firebase.auth().onAuthStateChanged(async (user) => {
       if (!user) return;
-
       currentUser = user;
       const db = firebase.firestore();
       const userRef = db.collection("users").doc(user.uid);
@@ -158,12 +161,13 @@
         }
       } catch (err) {
         console.error("❌ Error creating checkout:", err);
-        alert("Checkout failed. Please try again.");
+        alert("Something went wrong. Try again.");
       }
     }
   </script>
 </body>
 </html>
+
 
 
 
