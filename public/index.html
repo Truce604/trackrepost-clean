@@ -5,22 +5,27 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>TrackRepost – Sign In</title>
   <link rel="stylesheet" href="styles.css" />
+  <!-- Load Firebase JS SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+  
+  <!-- Make sure the firebaseConfig.js is loaded before Firebase SDK -->
   <script>
-    fetch("/js/firebaseConfig.js")
-      .then(res => {
-        if (!res.ok) throw new Error("Missing firebaseConfig.js");
-        return res.text();
-      })
-      .then(code => eval(code))
-      .then(() => {
-        console.log("✅ Firebase config loaded");
-        startAuth(); // Init login logic only after Firebase is loaded
-      })
-      .catch(err => {
-        console.error("❌ Firebase config missing.");
-      });
+    window.onload = function() {
+      fetch("/js/firebaseConfig.js")
+        .then(res => {
+          if (!res.ok) throw new Error("Missing firebaseConfig.js");
+          return res.text();
+        })
+        .then(code => {
+          eval(code); // This executes the Firebase config code
+          console.log("✅ Firebase config loaded");
+          startAuth(); // Init login logic only after Firebase is loaded
+        })
+        .catch(err => {
+          console.error("❌ Firebase config missing.");
+        });
+    };
 
     function startAuth() {
       const auth = firebase.auth();
@@ -40,6 +45,7 @@
         }
       });
 
+      // Login function
       window.login = function () {
         const provider = new firebase.auth.GoogleAuthProvider();
         auth.signInWithPopup(provider).catch(err => {
@@ -48,6 +54,7 @@
         });
       };
 
+      // Logout function
       window.logout = function () {
         auth.signOut().then(() => {
           window.location.href = "index.html";
@@ -58,6 +65,7 @@
       };
     }
   </script>
+
   <style>
     body {
       background-color: #0d0d0d;
@@ -144,8 +152,6 @@
   </footer>
 </body>
 </html>
-
-
 
 
 
