@@ -6,28 +6,24 @@
   <title>TrackRepost – Sign In</title>
   <link rel="stylesheet" href="styles.css" />
 
-  <!-- Load Firebase JS SDK -->
+  <!-- Firebase Compat SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
-  
-  <!-- Firebase config - Dynamically load it -->
+
+  <!-- ✅ Load Firebase Config Safely -->
   <script>
-    window.onload = function() {
-      fetch("/js/firebaseConfig.js")
-        .then(res => {
-          if (!res.ok) throw new Error("Missing firebaseConfig.js");
-          return res.text();
-        })
-        .then(code => {
-          // Instead of eval(), directly execute the config as JSON object
-          window.firebaseConfig = JSON.parse(code);
-          firebase.initializeApp(window.firebaseConfig);
-          console.log("✅ Firebase config loaded");
-          startAuth(); // Init login logic after Firebase is loaded
-        })
-        .catch(err => {
-          console.error("❌ Firebase config missing:", err);
-        });
+    window.onload = () => {
+      const script = document.createElement("script");
+      script.src = "/js/firebaseConfig.js";
+      script.onload = () => {
+        firebase.initializeApp(window.firebaseConfig);
+        console.log("✅ Firebase config loaded");
+        startAuth(); // Start login flow
+      };
+      script.onerror = () => {
+        console.error("❌ Failed to load firebaseConfig.js");
+      };
+      document.head.appendChild(script);
     };
 
     function startAuth() {
@@ -48,7 +44,6 @@
         }
       });
 
-      // Login function
       window.login = function () {
         const provider = new firebase.auth.GoogleAuthProvider();
         auth.signInWithPopup(provider).catch(err => {
@@ -57,7 +52,6 @@
         });
       };
 
-      // Logout function
       window.logout = function () {
         auth.signOut().then(() => {
           window.location.href = "index.html";
@@ -156,5 +150,6 @@
 
 </body>
 </html>
+
 
 
