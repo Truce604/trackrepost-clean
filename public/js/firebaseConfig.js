@@ -18,4 +18,6 @@ console.log("✅ Square App ID:", window.SQUARE_APP_ID);
 console.log("✅ Square Location ID:", window.SQUARE_LOCATION_ID);
 console.log("✅ Firebase config loaded:", window.firebaseConfig);
 
+
+
   
