@@ -5,28 +5,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>TrackRepost – Sign In</title>
   <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" href="/favicon.ico" type="image/x-icon" />
 
   <!-- Firebase Compat SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
 
-  <!-- ✅ Load Firebase Config Safely -->
-  <script>
-    window.onload = () => {
-      const script = document.createElement("script");
-      script.src = "/js/firebaseConfig.js";
-      script.onload = () => {
+  <!-- Load Firebase config dynamically -->
+  <script type="module">
+    fetch("/js/firebaseConfig.js")
+      .then(res => res.text())
+      .then(text => {
+        eval(text); // Safely execute config
         firebase.initializeApp(window.firebaseConfig);
-        console.log("✅ Firebase config loaded");
-        startAuth(); // Start login flow
-      };
-      script.onerror = () => {
-        console.error("❌ Failed to load firebaseConfig.js");
-      };
-      document.head.appendChild(script);
-    };
+        console.log("✅ Firebase Initialized");
+        initAuth();
+      })
+      .catch(err => console.error("❌ Firebase config missing or broken:", err));
 
-    function startAuth() {
+    function initAuth() {
       const auth = firebase.auth();
 
       auth.onAuthStateChanged(user => {
@@ -47,7 +44,7 @@
       window.login = function () {
         const provider = new firebase.auth.GoogleAuthProvider();
         auth.signInWithPopup(provider).catch(err => {
-          alert("❌ Login failed. Try again.");
+          alert("Login failed.");
           console.error(err);
         });
       };
@@ -55,10 +52,7 @@
       window.logout = function () {
         auth.signOut().then(() => {
           window.location.href = "index.html";
-        }).catch(err => {
-          alert("❌ Logout failed.");
-          console.error(err);
-        });
+        }).catch(console.error);
       };
     }
   </script>
@@ -72,11 +66,6 @@
       padding: 40px;
     }
 
-    h1 {
-      font-size: 2rem;
-      margin-bottom: 10px;
-    }
-
     .login-box {
       background: #1e1e1e;
       padding: 30px;
@@ -84,11 +73,6 @@
       max-width: 400px;
       margin: 0 auto;
       box-shadow: 0 0 8px rgba(255, 165, 0, 0.2);
-    }
-
-    .login-box p {
-      margin-bottom: 20px;
-      color: #aaa;
     }
 
     button {
@@ -99,7 +83,6 @@
       border-radius: 8px;
       font-weight: bold;
       cursor: pointer;
-      margin-top: 10px;
     }
 
     button:hover {
@@ -112,15 +95,15 @@
 
     footer {
       margin-top: 60px;
-      color: #555;
+      color: #777;
+      font-size: 0.9rem;
     }
 
     a {
       color: #ffa500;
-      text-decoration: none;
       font-weight: bold;
+      text-decoration: none;
     }
-
     a:hover {
       text-decoration: underline;
     }
@@ -150,6 +133,7 @@
 
 </body>
 </html>
+
 
 
 
