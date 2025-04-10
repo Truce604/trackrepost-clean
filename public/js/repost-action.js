@@ -171,13 +171,19 @@ async function confirmRepost() {
       prompted: false
     });
 
-    batch.update(userRef, {
-      credits: firebase.firestore.FieldValue.increment(earnedCredits)
-    });
+    // ✅ Only allow credit update if current user is admin (for now)
+    if (userId === "QJgAhrFy7pXxVQinJh9w2mvHoxM2") {
+      batch.update(userRef, {
+        credits: firebase.firestore.FieldValue.increment(earnedCredits)
+      });
+    }
 
-    batch.update(campaignRef, {
-      credits: firebase.firestore.FieldValue.increment(-earnedCredits)
-    });
+    // ✅ Only allow deduction if campaign owner is admin (safe for now)
+    if (campaignData.userId === "QJgAhrFy7pXxVQinJh9w2mvHoxM2") {
+      batch.update(campaignRef, {
+        credits: firebase.firestore.FieldValue.increment(-earnedCredits)
+      });
+    }
 
     batch.set(logRef, {
       userId,
