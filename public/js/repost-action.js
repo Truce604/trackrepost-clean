@@ -1,3 +1,8 @@
+// ✅ Initialize Firebase App if not already initialized
+if (!firebase.apps.length) {
+  firebase.initializeApp(window.firebaseConfig);
+}
+
 const auth = firebase.auth();
 const db = firebase.firestore();
 
@@ -25,7 +30,7 @@ auth.onAuthStateChanged(async (user) => {
 
     campaignData = campaignSnap.data();
 
-    document.getElementById("repost-container").innerHTML = `
+    document.body.innerHTML = `
       <div class="card">
         <img src="${campaignData.artworkUrl}" alt="Artwork" style="width:100%;border-radius:12px;margin-bottom:15px;" />
         <h2>${campaignData.title}</h2>
@@ -35,25 +40,32 @@ auth.onAuthStateChanged(async (user) => {
         <iframe id="sc-player" width="100%" height="140" scrolling="no" frameborder="no"
           src="https://w.soundcloud.com/player/?url=${encodeURIComponent(campaignData.trackUrl)}&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&visual=false"></iframe>
 
-        <form id="engagement-form" class="repost-form">
-          <label><input type="checkbox" id="like" checked /> 💖 Like this track (+1 credit)</label>
-          <label><input type="checkbox" id="follow" checked /> 👣 Follow the artist (+2 credits)</label>
-          <label><input type="checkbox" id="comment" /> 💬 Leave a comment (+2 credits)</label>
-          <textarea id="commentText" placeholder="Write a comment..." style="display:none;"></textarea>
+        <form id="engagement-form" style="margin-top:20px;text-align:left;">
+          <label><input type="checkbox" id="like" checked /> 💖 Like this track (+1 credit)</label><br/>
+          <label><input type="checkbox" id="follow" checked /> 👣 Follow the artist (+2 credits)</label><br/>
+          <label><input type="checkbox" id="comment" /> 💬 Leave a comment (+2 credits)</label><br/>
+          <textarea id="commentText" placeholder="Write a comment..." style="width:100%;border-radius:8px;margin-top:5px;display:none;"></textarea>
         </form>
 
-        <p id="reward-estimate" class="status-message">Estimated reward: -- credits</p>
-        <button id="repost-btn" disabled>▶️ Play track to enable boost</button>
+        <p id="reward-estimate" style="margin-top:10px;color:#aaa;">Estimated reward: -- credits</p>
+
+        <button id="repost-btn" class="confirm-button" disabled>▶️ Play track to enable boost</button>
       </div>
     `;
 
-    scWidget = SC.Widget(document.getElementById("sc-player"));
-    scWidget.bind(SC.Widget.Events.PLAY, () => {
-      const btn = document.getElementById("repost-btn");
-      btn.disabled = false;
-      btn.textContent = "✅ Boost & Earn";
-      btn.onclick = confirmRepost;
-    });
+    const script = document.createElement("script");
+    script.src = "https://w.soundcloud.com/player/api.js";
+    script.onload = () => {
+      const iframe = document.getElementById("sc-player");
+      scWidget = SC.Widget(iframe);
+      scWidget.bind(SC.Widget.Events.PLAY, () => {
+        const btn = document.getElementById("repost-btn");
+        btn.disabled = false;
+        btn.textContent = "✅ Boost & Earn";
+        btn.onclick = confirmRepost;
+      });
+    };
+    document.body.appendChild(script);
 
     document.addEventListener("change", (e) => {
       if (e.target.id === "comment") {
@@ -68,19 +80,19 @@ auth.onAuthStateChanged(async (user) => {
 
   } catch (err) {
     console.error("Error loading campaign:", err);
-    document.getElementById("repost-container").innerHTML = "<p>⚠️ Error loading campaign info.</p>";
+    document.body.innerHTML = "<p>⚠️ Error loading campaign info.</p>";
   }
 });
 
 async function updateEstimatedReward() {
   const userRef = db.collection("users").doc(currentUser.uid);
   const userSnap = await userRef.get();
-  const followers = userSnap.data()?.soundcloud?.followers || 0;
+  const followers = userSnap.data().soundcloud?.followers || 0;
   let total = Math.floor(followers / 100);
 
-  if (document.getElementById("like")?.checked) total += 1;
-  if (document.getElementById("follow")?.checked) total += 2;
-  if (document.getElementById("comment")?.checked && document.getElementById("commentText")?.value.trim()) total += 2;
+  if (document.getElementById("like").checked) total += 1;
+  if (document.getElementById("follow").checked) total += 2;
+  if (document.getElementById("comment").checked && document.getElementById("commentText").value.trim()) total += 2;
 
   document.getElementById("reward-estimate").textContent = `Estimated reward: ${total} credits`;
 }
@@ -89,17 +101,15 @@ async function confirmRepost() {
   const userId = currentUser.uid;
 
   try {
-    // Check for duplicate repost
     const dupes = await db.collection("reposts")
       .where("userId", "==", userId)
       .where("campaignId", "==", campaignId)
       .get();
     if (!dupes.empty) {
-      alert("❌ You’ve already boosted this track.");
+      alert("❌ You've already boosted this track.");
       return;
     }
 
-    // Check repost limit window
     const now = new Date();
     const resetHour = now.getHours() < 12 ? 0 : 12;
     const windowStart = new Date(now);
@@ -119,7 +129,7 @@ async function confirmRepost() {
     const userRef = db.collection("users").doc(userId);
     const userSnap = await userRef.get();
     const userData = userSnap.data();
-    const followers = userData?.soundcloud?.followers || 0;
+    const followers = userData.soundcloud?.followers || 0;
     const baseCredits = Math.floor(followers / 100);
 
     const liked = document.getElementById("like").checked;
@@ -145,6 +155,7 @@ async function confirmRepost() {
     const campaignRef = db.collection("campaigns").doc(campaignId);
     const repostRef = db.collection("reposts").doc();
     const logRef = db.collection("transactions").doc();
+    const ownerRef = db.collection("users").doc(campaignData.userId);
 
     const batch = db.batch();
 
