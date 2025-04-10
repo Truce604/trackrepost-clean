@@ -155,7 +155,6 @@ async function confirmRepost() {
     const campaignRef = db.collection("campaigns").doc(campaignId);
     const repostRef = db.collection("reposts").doc();
     const logRef = db.collection("transactions").doc();
-    const ownerRef = db.collection("users").doc(campaignData.userId);
 
     const batch = db.batch();
 
@@ -171,19 +170,13 @@ async function confirmRepost() {
       prompted: false
     });
 
-    // ✅ Only allow credit update if current user is admin (for now)
-    if (userId === "QJgAhrFy7pXxVQinJh9w2mvHoxM2") {
-      batch.update(userRef, {
-        credits: firebase.firestore.FieldValue.increment(earnedCredits)
-      });
-    }
+    batch.update(userRef, {
+      credits: firebase.firestore.FieldValue.increment(earnedCredits)
+    });
 
-    // ✅ Only allow deduction if campaign owner is admin (safe for now)
-    if (campaignData.userId === "QJgAhrFy7pXxVQinJh9w2mvHoxM2") {
-      batch.update(campaignRef, {
-        credits: firebase.firestore.FieldValue.increment(-earnedCredits)
-      });
-    }
+    batch.update(campaignRef, {
+      credits: firebase.firestore.FieldValue.increment(-earnedCredits)
+    });
 
     batch.set(logRef, {
       userId,
