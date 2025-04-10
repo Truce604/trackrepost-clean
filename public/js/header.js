@@ -1,38 +1,40 @@
-// ✅ Firebase Auth (for logout)
-const auth = firebase.auth();
-
-// ✅ Header HTML
-const headerHTML = `
-  <header style="background:#121212; padding:10px 20px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #333;">
-    <div style="display:flex; align-items:center; gap:12px;">
-      <img src="/images/track-repost-logo.png" alt="TrackRepost Logo" style="height:36px;">
-      <a href="dashboard.html" style="color:#ffa500; font-weight:bold; font-size:1.1rem; text-decoration:none;">TrackRepost</a>
-    </div>
-    <nav style="display:flex; gap:15px;">
-      <a href="dashboard.html">Dashboard</a>
-      <a href="submit-campaign.html">Submit</a>
-      <a href="explore.html">Explore</a>
-      <a href="repost-action.html">Repost</a>
-      <a href="credits.html">Buy Credits</a>
-      <a href="profile.html">Profile</a>
-      <a href="pro-plan.html">Pro Plans</a>
-      <a href="notifications.html">Notifications</a>
-      <button id="logout-btn" style="background:#ffa500; color:black; border:none; padding:6px 12px; border-radius:6px; font-weight:bold; cursor:pointer;">Logout</button>
-    </nav>
-  </header>
-`;
-
-// ✅ Inject header into page
+// /public/js/header.js
 document.addEventListener("DOMContentLoaded", () => {
-  const headerContainer = document.getElementById("site-header");
-  if (headerContainer) {
-    headerContainer.innerHTML = headerHTML;
+  const header = document.getElementById("site-header");
+  if (!header) return;
 
-    document.getElementById("logout-btn").addEventListener("click", () => {
-      auth.signOut().then(() => {
+  const user = firebase.auth().currentUser;
+  const navLinks = `
+    <header style="background:#111;padding:10px 20px;border-bottom:1px solid #333;display:flex;justify-content:space-between;align-items:center;">
+      <a href="index.html" style="color:#ffa500;font-weight:bold;font-size:1.2rem;text-decoration:none;">
+        🎵 TrackRepost
+      </a>
+      <nav>
+        <a href="dashboard.html">Dashboard</a>
+        <a href="submit-campaign.html">Submit</a>
+        <a href="explore.html">Explore</a>
+        <a href="repost.html">Repost</a>
+        <a href="credits.html">Buy Credits</a>
+        <a href="profile.html">Profile</a>
+        <a href="notifications.html">Notifications</a>
+        <a href="pro-plan.html">Pro Plans</a>
+        <button id="logout-btn" style="margin-left:15px;padding:6px 12px;border:none;border-radius:6px;background:#ffa500;color:#000;font-weight:bold;cursor:pointer;">
+          Logout
+        </button>
+      </nav>
+    </header>
+  `;
+
+  header.innerHTML = navLinks;
+
+  const logoutBtn = document.getElementById("logout-btn");
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", () => {
+      firebase.auth().signOut().then(() => {
         window.location.href = "index.html";
       });
     });
   }
 });
+
 
