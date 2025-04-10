@@ -5,16 +5,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>TrackRepost – Sign In</title>
   <link rel="stylesheet" href="styles.css" />
-  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
-  <!-- Your Firebase config -->
-  <script src="/js/firebaseConfig.js"></script>
   <script>
-    if (window.firebaseConfig) {
-      firebase.initializeApp(window.firebaseConfig);
+    fetch("/js/firebaseConfig.js")
+      .then(res => {
+        if (!res.ok) throw new Error("Missing firebaseConfig.js");
+        return res.text();
+      })
+      .then(code => eval(code))
+      .then(() => {
+        console.log("✅ Firebase config loaded");
+        startAuth(); // Init login logic only after Firebase is loaded
+      })
+      .catch(err => {
+        console.error("❌ Firebase config missing.");
+      });
+
+    function startAuth() {
       const auth = firebase.auth();
-      window.auth = auth;
 
       auth.onAuthStateChanged(user => {
         const loginUI = document.getElementById("login-ui");
@@ -31,30 +40,36 @@
         }
       });
 
-      window.login = () => {
+      window.login = function () {
         const provider = new firebase.auth.GoogleAuthProvider();
         auth.signInWithPopup(provider).catch(err => {
-          alert("❌ Login failed.");
+          alert("❌ Login failed. Try again.");
           console.error(err);
         });
       };
 
-      window.logout = () => {
+      window.logout = function () {
         auth.signOut().then(() => {
           window.location.href = "index.html";
+        }).catch(err => {
+          alert("❌ Logout failed.");
+          console.error(err);
         });
       };
-    } else {
-      console.error("❌ Firebase config missing.");
     }
   </script>
   <style>
     body {
       background-color: #0d0d0d;
       color: #fff;
-      font-family: Arial, sans-serif;
+      font-family: 'Arial', sans-serif;
       text-align: center;
       padding: 40px;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 10px;
     }
 
     .login-box {
@@ -63,7 +78,12 @@
       border-radius: 12px;
       max-width: 400px;
       margin: 0 auto;
-      box-shadow: 0 0 8px rgba(255, 165, 0, 0.3);
+      box-shadow: 0 0 8px rgba(255, 165, 0, 0.2);
+    }
+
+    .login-box p {
+      margin-bottom: 20px;
+      color: #aaa;
     }
 
     button {
@@ -87,7 +107,7 @@
 
     footer {
       margin-top: 60px;
-      color: #777;
+      color: #555;
     }
 
     a {
@@ -102,6 +122,7 @@
   </style>
 </head>
 <body>
+
   <div class="login-box">
     <h1>🔥 TrackRepost</h1>
     <p>The easiest way to grow your SoundCloud</p>
@@ -123,6 +144,7 @@
   </footer>
 </body>
 </html>
+
 
 
 
