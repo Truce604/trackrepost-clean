@@ -1,228 +1,214 @@
-// ✅ Ensure Firebase is loaded before running scripts 
+// ✅ Ensure Firebase is loaded before running scripts
 if (typeof firebase === "undefined") {
-    console.error("🚨 Firebase failed to load! Check index.html script imports.");
+  console.error("🚨 Firebase failed to load! Check index.html script imports.");
 } else {
-    console.log("✅ Firebase Loaded Successfully!");
+  console.log("✅ Firebase Loaded Successfully!");
 }
 
-// ✅ Firebase Authentication and Firestore
+// ✅ Firebase Auth & Firestore Init
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// ✅ Firebase Auth State Listener (Checks if user is logged in)
-auth.onAuthStateChanged(user => {
-    if (user) {
-        console.log(`✅ User logged in: ${user.email}`);
-        syncDisplayName(user); // Ensure display name is saved in Firestore
-        updateDashboard(user);
-        loadActiveCampaigns(); // Reload campaigns after login
-    } else {
-        console.warn("🚨 No user is logged in.");
-        updateDashboard(null);
-    }
+// ✅ Auth Listener
+auth.onAuthStateChanged((user) => {
+  if (user) {
+    console.log(`✅ User logged in: ${user.email}`);
+    syncDisplayName(user);
+    updateDashboard(user);
+    loadActiveCampaigns();
+  } else {
+    console.warn("🚨 No user is logged in.");
+    updateDashboard(null);
+  }
 });
 
-// ✅ Ensure Display Name is Synced to Firestore
+// ✅ Sync Display Name
 function syncDisplayName(user) {
-    if (!user) return;
-
-    const userRef = db.collection("users").doc(user.uid);
-    userRef.get().then(docSnapshot => {
-        if (!docSnapshot.exists || !docSnapshot.data().displayName) {
-            userRef.set({
-                email: user.email,
-                credits: 0,
-                reposts: 0,
-                displayName: user.displayName || "User"
-            }, { merge: true });
-            console.log(`✅ Synced display name: ${user.displayName}`);
-        }
-    }).catch(error => console.error("❌ Error syncing display name:", error));
+  const userRef = db.collection("users").doc(user.uid);
+  userRef.get().then((doc) => {
+    if (!doc.exists || !doc.data().displayName) {
+      userRef.set({
+        email: user.email,
+        credits: 0,
+        reposts: 0,
+        displayName: user.displayName || "User"
+      }, { merge: true });
+      console.log(`✅ Synced display name: ${user.displayName}`);
+    }
+  }).catch((err) => {
+    console.error("❌ Error syncing display name:", err);
+  });
 }
 
-// ✅ Update User Dashboard
+// ✅ Update Dashboard
 function updateDashboard(user) {
-    const dashboard = document.getElementById("userDashboard");
+  const dash = document.getElementById("userDashboard");
+  if (!dash) return;
 
-    if (!dashboard) {
-        console.error("❌ Dashboard element not found.");
-        return;
-    }
-
-    if (!user) {
-        dashboard.innerHTML = `<h2>You are not logged in.</h2><p>Please log in or sign up.</p>`;
-        return;
-    }
-
-    dashboard.innerHTML = `<h2>Welcome, ${user.displayName || user.email}!</h2>`;
+  if (!user) {
+    dash.innerHTML = `<h2>You are not logged in.</h2><p>Please log in or sign up.</p>`;
+  } else {
+    dash.innerHTML = `<h2>Welcome, ${user.displayName || user.email}!</h2>`;
+  }
 }
 
-// ✅ Sign Up a New User (With Display Name)
+// ✅ Sign Up
 function signupUser() {
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
-    const displayName = document.getElementById("displayName").value; // New input for display name
+  const email = document.getElementById("email")?.value;
+  const password = document.getElementById("password")?.value;
+  const displayName = document.getElementById("displayName")?.value;
 
-    auth.createUserWithEmailAndPassword(email, password)
-        .then(userCredential => {
-            const user = userCredential.user;
+  if (!email || !password || !displayName) {
+    alert("🚨 Please fill in all signup fields.");
+    return;
+  }
 
-            // ✅ Update Firebase Authentication Profile with Display Name
-            return user.updateProfile({
-                displayName: displayName
-            }).then(() => {
-                // ✅ Store User in Firestore
-                return db.collection("users").doc(user.uid).set({
-                    email: user.email,
-                    credits: 0,
-                    reposts: 0,
-                    displayName: displayName
-                }, { merge: true });
-            }).then(() => {
-                console.log(`✅ User signed up: ${user.email} (Display Name: ${displayName})`);
-                updateDashboard(user);
-            });
-        })
-        .catch(error => {
-            console.error("❌ Signup Error:", error);
-            alert(`Signup Error: ${error.message}`);
-        });
+  auth.createUserWithEmailAndPassword(email, password)
+    .then((cred) => {
+      const user = cred.user;
+      return user.updateProfile({ displayName }).then(() => {
+        return db.collection("users").doc(user.uid).set({
+          email: user.email,
+          credits: 0,
+          reposts: 0,
+          displayName
+        }, { merge: true });
+      });
+    })
+    .then(() => {
+      console.log(`✅ Signed up as ${email}`);
+    })
+    .catch((err) => {
+      console.error("❌ Signup Error:", err);
+      alert(`Signup Error: ${err.message}`);
+    });
 }
 
-// ✅ Log In an Existing User (Ensures Display Name is Synced)
+// ✅ Login
 function loginUser() {
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
+  const email = document.getElementById("email")?.value;
+  const password = document.getElementById("password")?.value;
 
-    auth.signInWithEmailAndPassword(email, password)
-        .then(userCredential => {
-            const user = userCredential.user;
-            syncDisplayName(user); // Ensure display name is stored in Firestore
-            console.log(`✅ User logged in: ${user.email}`);
-            updateDashboard(user);
-        })
-        .catch(error => {
-            console.error("❌ Login Error:", error);
-            alert(`Login Error: ${error.message}`);
-        });
+  if (!email || !password) {
+    alert("🚨 Please enter email and password.");
+    return;
+  }
+
+  auth.signInWithEmailAndPassword(email, password)
+    .then((cred) => {
+      const user = cred.user;
+      syncDisplayName(user);
+    })
+    .catch((err) => {
+      console.error("❌ Login Error:", err);
+      alert(`Login Error: ${err.message}`);
+    });
 }
 
-// ✅ Log Out the Current User
+// ✅ Logout
 function logoutUser() {
-    auth.signOut()
-        .then(() => {
-            console.log("✅ User logged out successfully.");
-            updateDashboard(null);
-        })
-        .catch(error => {
-            console.error("❌ Logout Error:", error);
-        });
+  auth.signOut()
+    .then(() => {
+      console.log("✅ Logged out successfully.");
+    })
+    .catch((err) => {
+      console.error("❌ Logout Error:", err);
+    });
 }
 
-// ✅ Load Active Campaigns from Firestore
+// ✅ Load Campaigns
 function loadActiveCampaigns() {
-    console.log("🔄 Loading campaigns...");
+  const container = document.getElementById("activeCampaigns");
+  if (!container) return;
 
-    const campaignsDiv = document.getElementById("activeCampaigns");
-    if (!campaignsDiv) {
-        console.error("❌ Campaigns section not found.");
-        return;
-    }
+  db.collection("campaigns").get()
+    .then((snapshot) => {
+      container.innerHTML = "";
+      if (snapshot.empty) {
+        container.innerHTML = "<p>No active campaigns right now.</p>";
+      } else {
+        snapshot.forEach((doc) => {
+          const data = doc.data();
+          const earned = Math.max(1, Math.floor(100 / 100)) + 3;
 
-    db.collection("campaigns").get()
-        .then(querySnapshot => {
-            campaignsDiv.innerHTML = "";
-
-            if (querySnapshot.empty) {
-                campaignsDiv.innerHTML = "<p>No active campaigns available.</p>";
-            } else {
-                querySnapshot.forEach(doc => {
-                    const data = doc.data();
-
-                    let estimatedCredits = Math.max(1, Math.floor(100 / 100)) + 3; // Example, adjust dynamically
-
-                    campaignsDiv.innerHTML += `
-                        <div class="campaign">
-                            <h3>🔥 Now Promoting:</h3>
-                            <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
-                                src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.track)}">
-                            </iframe>
-                            <button onclick="redirectToRepostPage('${doc.id}', '${data.track}')">
-                                Repost & Earn ${estimatedCredits} Credits
-                            </button>
-                        </div>
-                    `;
-                });
-            }
-        })
-        .catch(error => {
-            console.error("❌ Error loading active campaigns:", error);
+          container.innerHTML += `
+            <div class="campaign">
+              <h3>🔥 Now Promoting:</h3>
+              <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
+                src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.track)}">
+              </iframe>
+              <button onclick="redirectToRepostPage('${doc.id}', '${data.track}')">
+                Repost & Earn ${earned} Credits
+              </button>
+            </div>
+          `;
         });
+      }
+    })
+    .catch((err) => {
+      console.error("❌ Error loading campaigns:", err);
+    });
 }
 
-// ✅ Redirect to Repost Page
+// ✅ Redirect to repost page
 function redirectToRepostPage(campaignId, trackUrl) {
-    window.location.href = `repost.html?campaignId=${campaignId}&trackUrl=${encodeURIComponent(trackUrl)}`;
+  window.location.href = `repost.html?campaignId=${campaignId}&trackUrl=${encodeURIComponent(trackUrl)}`;
 }
 
-// ✅ Function to handle reposting
+// ✅ Repost track (credits, deduction, etc.)
 async function repostTrack(campaignId) {
-    if (!auth.currentUser) {
-        alert("🚨 You must be logged in to repost.");
-        return;
+  const user = auth.currentUser;
+  if (!user) {
+    alert("🚨 Please login first.");
+    return;
+  }
+
+  const userRef = db.collection("users").doc(user.uid);
+  const campaignRef = db.collection("campaigns").doc(campaignId);
+
+  try {
+    const [userSnap, campaignSnap] = await Promise.all([userRef.get(), campaignRef.get()]);
+
+    if (!userSnap.exists || !campaignSnap.exists) {
+      alert("❌ Error: Missing user or campaign.");
+      return;
     }
 
-    const userRef = db.collection("users").doc(auth.currentUser.uid);
-    const campaignRef = db.collection("campaigns").doc(campaignId);
+    const userData = userSnap.data();
+    const campaignData = campaignSnap.data();
 
-    try {
-        const userDoc = await userRef.get();
-        if (!userDoc.exists) {
-            alert("❌ User data not found.");
-            return;
-        }
-        const userData = userDoc.data();
-        const followerCount = userData.followers || 100; // Default to 100 followers if not set
+    const followerCount = userData.followers || 100;
+    let creditsToEarn = Math.max(1, Math.floor(followerCount / 100)) + 3;
 
-        let earnedCredits = Math.max(1, Math.floor(followerCount / 100));
-        earnedCredits += 1; // +1 credit for liking
-        earnedCredits += 2; // +2 credits for commenting
-
-        const campaignDoc = await campaignRef.get();
-        if (!campaignDoc.exists || campaignDoc.data().creditsRemaining < earnedCredits) {
-            alert("⚠️ Not enough credits left in this campaign.");
-            return;
-        }
-
-        await db.runTransaction(async (transaction) => {
-            const updatedCampaign = await transaction.get(campaignRef);
-            const updatedUser = await transaction.get(userRef);
-
-            if (!updatedCampaign.exists || !updatedUser.exists) return;
-
-            transaction.update(campaignRef, {
-                creditsRemaining: updatedCampaign.data().creditsRemaining - earnedCredits,
-                repostCount: (updatedCampaign.data().repostCount || 0) + 1
-            });
-
-            transaction.update(userRef, {
-                credits: (updatedUser.data().credits || 0) + earnedCredits
-            });
-        });
-
-        alert(`✅ Repost successful! You earned ${earnedCredits} credits.`);
-    } catch (error) {
-        console.error("❌ Error reposting:", error);
+    if (campaignData.creditsRemaining < creditsToEarn) {
+      alert("⚠️ Not enough credits left.");
+      return;
     }
+
+    await db.runTransaction(async (txn) => {
+      txn.update(campaignRef, {
+        creditsRemaining: campaignData.creditsRemaining - creditsToEarn,
+        repostCount: (campaignData.repostCount || 0) + 1
+      });
+
+      txn.update(userRef, {
+        credits: (userData.credits || 0) + creditsToEarn
+      });
+    });
+
+    alert(`✅ Repost complete. You earned ${creditsToEarn} credits!`);
+  } catch (err) {
+    console.error("❌ Repost error:", err);
+    alert("Repost failed.");
+  }
 }
 
-// ✅ Ensure Page Loads & Functions are Attached
+// ✅ Safe attach handlers
 document.addEventListener("DOMContentLoaded", () => {
-    console.log("✅ Page Loaded Successfully!");
-    loadActiveCampaigns();
+  document.getElementById("signupBtn")?.addEventListener("click", signupUser);
+  document.getElementById("loginBtn")?.addEventListener("click", loginUser);
+  document.getElementById("logoutBtn")?.addEventListener("click", logoutUser);
 
-    document.getElementById("signupBtn").addEventListener("click", signupUser);
-    document.getElementById("loginBtn").addEventListener("click", loginUser);
-    document.getElementById("logoutBtn").addEventListener("click", logoutUser);
+  loadActiveCampaigns();
 });
 
