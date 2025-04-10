@@ -5,16 +5,6 @@ const cors = require("cors")({ origin: true });
 admin.initializeApp();
 const db = admin.firestore();
 
-// ✅ Assign 30 credits to new users on signup
-exports.assignCreditsOnSignup = functions.auth.user().onCreate((userRecord) => {
-  return db.collection("users").doc(userRecord.uid).set({
-    credits: 30,
-    createdAt: new Date(),
-    email: userRecord.email || null,
-    displayName: userRecord.displayName || null,
-  }, { merge: true });
-});
-
 // ✅ Simple test function
 exports.helloWorld = functions.https.onRequest((req, res) => {
   res.send("Hello from TrackRepost Firebase Functions!");
