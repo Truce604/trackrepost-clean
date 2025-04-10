@@ -4,21 +4,29 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Repost Track - TrackRepost</title>
+
+  <!-- Styles -->
   <link rel="stylesheet" href="styles.css" />
 
-  <!-- Firebase SDKs (Compat) -->
+  <!-- Firebase Compat SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
 
-  <!-- ✅ Global Firebase + Square config -->
+  <!-- Firebase + Square Config -->
   <script src="/js/firebaseConfig.js"></script>
+  <script>
+    firebase.initializeApp(window.firebaseConfig);
+  </script>
 
-  <!-- ✅ SoundCloud Widget SDK -->
+  <!-- SoundCloud SDK -->
   <script src="https://w.soundcloud.com/player/api.js"></script>
 
-  <!-- ✅ Repost logic -->
+  <!-- Repost Script -->
   <script src="/js/repost-action.js" defer></script>
+
+  <!-- Header -->
+  <script type="module" src="/js/header.js"></script>
 
   <style>
     body {
@@ -26,123 +34,97 @@
       color: #fff;
       font-family: Arial, sans-serif;
       padding: 30px;
-      max-width: 600px;
+      max-width: 700px;
       margin: 0 auto;
     }
 
-    .track-meta {
-      display: flex;
-      gap: 15px;
+    h1 {
+      text-align: center;
       margin-bottom: 20px;
     }
 
-    .track-meta img.artwork {
-      width: 100px;
-      height: 100px;
-      object-fit: cover;
+    .card {
+      background: #1e1e1e;
+      padding: 20px;
       border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
     }
 
-    .meta-info {
-      flex: 1;
-    }
-
-    .repost-form {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      background: #1a1a1a;
-      padding: 16px;
+    .card img {
+      width: 100%;
       border-radius: 12px;
-      margin-top: 20px;
+      margin-bottom: 15px;
     }
 
-    .repost-form label {
-      font-size: 0.95rem;
+    .card h2 {
+      margin: 0 0 10px;
     }
 
-    .repost-form textarea {
-      background: #1a1a1a;
-      color: #fff;
-      border: 1px solid #333;
+    .card p {
+      margin: 5px 0;
+      color: #ccc;
+    }
+
+    iframe {
+      margin-top: 15px;
       border-radius: 8px;
-      padding: 8px;
+    }
+
+    form label {
+      display: block;
+      margin: 10px 0 5px;
+    }
+
+    textarea {
+      width: 100%;
+      border-radius: 8px;
+      border: 1px solid #333;
+      background: #121212;
+      color: #fff;
+      padding: 10px;
       resize: vertical;
       min-height: 60px;
     }
 
-    .repost-form button {
+    .confirm-button {
+      margin-top: 15px;
+      padding: 12px 20px;
       background: #ffa500;
       color: #000;
       border: none;
-      padding: 10px;
-      font-weight: bold;
       border-radius: 8px;
+      font-weight: bold;
       cursor: pointer;
+      width: 100%;
     }
 
-    .repost-form button:disabled {
+    .confirm-button:disabled {
       background: #444;
-      color: #888;
+      color: #aaa;
       cursor: not-allowed;
     }
 
-    .status-message {
-      margin-top: 15px;
+    #reward-estimate {
+      text-align: center;
       font-size: 0.95rem;
-      color: #ccc;
+      color: #aaa;
+      margin-top: 10px;
     }
 
-    .modal.hidden { display: none; }
-    .modal {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.8);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 9999;
-    }
-    .modal-content {
-      background: #1e1e1e;
-      padding: 20px;
-      border-radius: 12px;
+    #repost-container p {
       text-align: center;
-      color: white;
-      max-width: 300px;
-    }
-    .repost-link {
-      display: block;
-      margin: 10px 0;
-      color: #ffa500;
-      font-weight: bold;
-      text-decoration: underline;
-    }
-    #confirm-manual-repost {
-      background: #ffa500;
-      color: black;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 6px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    .success-box {
-      margin-top: 20px;
-      background: #222;
-      border: 1px solid #4caf50;
-      padding: 15px;
-      border-radius: 8px;
-      color: #4caf50;
-      font-weight: bold;
+      margin-top: 50px;
+      font-size: 1.1rem;
+      color: #bbb;
     }
   </style>
 </head>
 <body>
+  <div id="site-header"></div>
+
   <h1>🎧 Repost This Track</h1>
   <div id="repost-container">
     <p>Loading campaign...</p>
   </div>
 </body>
 </html>
-
