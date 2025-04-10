@@ -1,4 +1,4 @@
-// ✅ Initialize Firebase App if not already initialized
+// ✅ Initialize Firebase App
 if (!firebase.apps.length) {
   firebase.initializeApp(window.firebaseConfig);
 }
@@ -99,101 +99,36 @@ async function updateEstimatedReward() {
 
 async function confirmRepost() {
   const userId = currentUser.uid;
+  const liked = document.getElementById("like").checked;
+  const followed = document.getElementById("follow").checked;
+  const commented = document.getElementById("comment").checked;
+  const commentText = document.getElementById("commentText").value.trim();
 
   try {
-    const dupes = await db.collection("reposts")
-      .where("userId", "==", userId)
-      .where("campaignId", "==", campaignId)
-      .get();
-    if (!dupes.empty) {
-      alert("❌ You've already boosted this track.");
-      return;
-    }
-
-    const now = new Date();
-    const resetHour = now.getHours() < 12 ? 0 : 12;
-    const windowStart = new Date(now);
-    windowStart.setHours(resetHour, 0, 0, 0);
-
-    const recent = await db.collection("reposts")
-      .where("userId", "==", userId)
-      .where("timestamp", ">", windowStart)
-      .get();
-
-    const count = recent.docs.filter(d => !d.data().prompted).length;
-    if (count >= 10) {
-      alert("🚫 You’ve hit your 10 boosts for this window.");
-      return;
-    }
-
-    const userRef = db.collection("users").doc(userId);
-    const userSnap = await userRef.get();
-    const userData = userSnap.data();
-    const followers = userData.soundcloud?.followers || 0;
-    const baseCredits = Math.floor(followers / 100);
-
-    const liked = document.getElementById("like").checked;
-    const followed = document.getElementById("follow").checked;
-    const commented = document.getElementById("comment").checked;
-    const commentText = document.getElementById("commentText").value.trim();
-
-    let earnedCredits = baseCredits;
-    if (liked) earnedCredits += 1;
-    if (followed) earnedCredits += 2;
-    if (commented && commentText) earnedCredits += 2;
-
-    if (earnedCredits <= 0) {
-      alert("❌ You must like, follow, comment, or have followers to earn credits.");
-      return;
-    }
-
-    if (campaignData.credits < earnedCredits) {
-      alert("🚫 Not enough campaign credits to reward you right now.");
-      return;
-    }
-
-    const campaignRef = db.collection("campaigns").doc(campaignId);
-    const repostRef = db.collection("reposts").doc();
-    const logRef = db.collection("transactions").doc();
-
-    const batch = db.batch();
-
-    batch.set(repostRef, {
-      userId,
-      campaignId,
-      trackUrl: campaignData.trackUrl,
-      liked,
-      follow: followed,
-      comment: commented,
-      commentText,
-      timestamp: new Date(),
-      prompted: false
+    const res = await fetch("https://us-central1-trackrepost-921f8.cloudfunctions.net/repostAndReward", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId,
+        campaignId,
+        liked,
+        followed,
+        commented,
+        commentText
+      })
     });
 
-    batch.update(userRef, {
-      credits: firebase.firestore.FieldValue.increment(earnedCredits)
-    });
-
-    batch.update(campaignRef, {
-      credits: firebase.firestore.FieldValue.increment(-earnedCredits)
-    });
-
-    batch.set(logRef, {
-      userId,
-      type: "earned",
-      amount: earnedCredits,
-      reason: `Boosted: ${campaignData.title}`,
-      timestamp: new Date()
-    });
-
-    await batch.commit();
-
-    alert(`✅ Boost complete! You earned ${earnedCredits} credits.`);
-    window.location.href = "dashboard.html";
+    if (res.ok) {
+      const data = await res.json();
+      alert(`✅ Boost complete! You earned ${data.earnedCredits} credits.`);
+      window.location.href = "dashboard.html";
+    } else {
+      const error = await res.text();
+      alert(`❌ Boost failed: ${error}`);
+    }
 
   } catch (err) {
-    console.error("🔥 Boost failed:", err);
-    alert("❌ Something went wrong while boosting this track.");
+    console.error("🔥 Boost error:", err);
+    alert("❌ Something went wrong during your boost.");
   }
 }
-
