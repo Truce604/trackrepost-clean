@@ -5,11 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>TrackRepost – Sign In</title>
   <link rel="stylesheet" href="styles.css" />
+
   <!-- Load Firebase JS SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
   
-  <!-- Make sure the firebaseConfig.js is loaded before Firebase SDK -->
+  <!-- Firebase config - Dynamically load it -->
   <script>
     window.onload = function() {
       fetch("/js/firebaseConfig.js")
@@ -18,12 +19,14 @@
           return res.text();
         })
         .then(code => {
-          eval(code); // This executes the Firebase config code
+          // Instead of eval(), directly execute the config as JSON object
+          window.firebaseConfig = JSON.parse(code);
+          firebase.initializeApp(window.firebaseConfig);
           console.log("✅ Firebase config loaded");
-          startAuth(); // Init login logic only after Firebase is loaded
+          startAuth(); // Init login logic after Firebase is loaded
         })
         .catch(err => {
-          console.error("❌ Firebase config missing.");
+          console.error("❌ Firebase config missing:", err);
         });
     };
 
@@ -150,9 +153,8 @@
   <footer>
     <p>© 2025 TrackRepost. All Rights Reserved.</p>
   </footer>
+
 </body>
 </html>
-
-
 
 
