@@ -6,21 +6,21 @@ admin.initializeApp();
 const db = admin.firestore();
 
 // ✅ Assign 30 credits to new users on signup
-exports.assignCreditsOnSignup = functions.auth.user().onCreate((user) => {
-  return db.collection("users").doc(user.uid).set({
+exports.assignCreditsOnSignup = functions.auth.user().onCreate((userRecord) => {
+  return db.collection("users").doc(userRecord.uid).set({
     credits: 30,
     createdAt: new Date(),
-    email: user.email || null,
-    displayName: user.displayName || null,
+    email: userRecord.email || null,
+    displayName: userRecord.displayName || null,
   }, { merge: true });
 });
 
-// ✅ Test endpoint
+// ✅ Simple test function
 exports.helloWorld = functions.https.onRequest((req, res) => {
   res.send("Hello from TrackRepost Firebase Functions!");
 });
 
-// ✅ Secure repost handler with CORS and credit logic
+// ✅ Handle reposts, calculate rewards, and update Firestore securely
 exports.repostAndReward = functions.https.onRequest((req, res) => {
   cors(req, res, async () => {
     try {
@@ -61,7 +61,7 @@ exports.repostAndReward = functions.https.onRequest((req, res) => {
         return;
       }
 
-      // 🔁 Enforce 12-hour repost window (max 10)
+      // 🔁 Enforce 12-hour repost window (max 10 reposts unless prompted)
       const now = new Date();
       const resetHour = now.getHours() < 12 ? 0 : 12;
       const windowStart = new Date(now);
@@ -95,12 +95,12 @@ exports.repostAndReward = functions.https.onRequest((req, res) => {
         return;
       }
 
+      // 🔁 Write repost, transaction, update credits
       const repostRef = db.collection("reposts").doc();
       const transactionRef = db.collection("transactions").doc();
 
       const batch = db.batch();
 
-      // ➕ Log the repost
       batch.set(repostRef, {
         userId,
         campaignId,
@@ -113,17 +113,14 @@ exports.repostAndReward = functions.https.onRequest((req, res) => {
         prompted: false
       });
 
-      // ➕ Add credits to user
       batch.update(db.collection("users").doc(userId), {
         credits: admin.firestore.FieldValue.increment(earnedCredits)
       });
 
-      // ➖ Subtract from campaign
       batch.update(db.collection("campaigns").doc(campaignId), {
         credits: admin.firestore.FieldValue.increment(-earnedCredits)
       });
 
-      // 🧾 Log the transaction
       batch.set(transactionRef, {
         userId,
         type: "earned",
@@ -142,6 +139,8 @@ exports.repostAndReward = functions.https.onRequest((req, res) => {
     }
   });
 });
+
+
 
 
 
