@@ -34,6 +34,15 @@ document.addEventListener("DOMContentLoaded", () => {
         `;
         container.appendChild(card);
         found = true;
+
+        // Check if the track has already been reposted by the user
+        db.collection("reposts").doc(`${user.uid}_${doc.id}`).get()
+          .then(repostDoc => {
+            if (repostDoc.exists) {
+              // Remove the track from UI if already reposted
+              container.removeChild(card);
+            }
+          });
       });
 
       if (!found) {
@@ -46,3 +55,4 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
+
