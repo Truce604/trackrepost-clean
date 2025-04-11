@@ -12,7 +12,7 @@ const defaultClient = squareConnect.ApiClient.instance;
 defaultClient.basePath = "https://connect.squareup.com";
 
 const oauth2 = defaultClient.authentications["oauth2"];
-oauth2.accessToken = process.env.SQUARE_ACCESS_TOKEN;
+oauth2.accessToken = functions.config().square.access_token;
 
 const checkoutApi = new squareConnect.CheckoutApi();
 
@@ -24,22 +24,25 @@ exports.createCheckout = functions.https.onRequest((req, res) => {
 
     try {
       const { credits, userId, plan } = req.body;
+      const locationId = functions.config().square.location_id;
 
       if (!credits || !userId) {
         return res.status(400).json({ error: "Missing credits or userId" });
       }
 
+      console.log("✅ Using Square Location ID:", locationId);
+
       const requestBody = {
         idempotency_key: uuidv4(),
         order: {
           order: {
-            location_id: process.env.SQUARE_LOCATION_ID,
+            location_id: locationId,
             line_items: [
               {
                 name: `${credits} Credits`,
                 quantity: "1",
                 base_price_money: {
-                  amount: credits * 10,
+                  amount: credits * 10, // 💰 Adjust price per credit
                   currency: "CAD",
                 },
               },
@@ -51,10 +54,7 @@ exports.createCheckout = functions.https.onRequest((req, res) => {
         note: `${credits} Credits Purchase for userId=${userId}${plan ? ` Plan=${plan}` : ""}`,
       };
 
-      const response = await checkoutApi.createCheckout(
-        process.env.SQUARE_LOCATION_ID,
-        requestBody
-      );
+      const response = await checkoutApi.createCheckout(locationId, requestBody);
 
       const checkoutUrl = response.checkout.checkout_page_url;
       res.status(200).json({ checkoutUrl });
@@ -64,6 +64,7 @@ exports.createCheckout = functions.https.onRequest((req, res) => {
     }
   });
 });
+
 
 
 
