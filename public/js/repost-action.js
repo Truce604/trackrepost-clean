@@ -105,6 +105,7 @@ async function confirmRepost() {
   const commentText = document.getElementById("commentText").value.trim();
 
   try {
+    // Perform the repost action and update Firestore
     const res = await fetch("https://us-central1-trackrepost-921f8.cloudfunctions.net/repostAndReward", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -121,6 +122,17 @@ async function confirmRepost() {
     if (res.ok) {
       const data = await res.json();
       alert(`✅ Boost complete! You earned ${data.earnedCredits} credits.`);
+      
+      // Remove the track from user's view after reposting
+      const userRepostRef = db.collection("reposts").doc(`${userId}_${campaignId}`);
+      await userRepostRef.set({
+        campaignId,
+        liked,
+        followed,
+        commented,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
       window.location.href = "dashboard.html";
     } else {
       const error = await res.text();
@@ -132,3 +144,4 @@ async function confirmRepost() {
     alert("❌ Something went wrong during your boost.");
   }
 }
+
