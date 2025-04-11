@@ -1,3 +1,5 @@
+// File: functions/index.js
+
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const squareConnect = require("square-connect");
@@ -42,7 +44,7 @@ exports.createCheckout = functions.https.onRequest((req, res) => {
                 name: `${credits} Credits`,
                 quantity: "1",
                 base_price_money: {
-                  amount: credits * 10, // 💰 Adjust price per credit
+                  amount: credits * 10,
                   currency: "CAD",
                 },
               },
@@ -55,7 +57,6 @@ exports.createCheckout = functions.https.onRequest((req, res) => {
       };
 
       const response = await checkoutApi.createCheckout(locationId, requestBody);
-
       const checkoutUrl = response.checkout.checkout_page_url;
       res.status(200).json({ checkoutUrl });
     } catch (err) {
