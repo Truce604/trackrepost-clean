@@ -4,177 +4,102 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Buy Credits | TrackRepost</title>
+  <link rel="icon" href="/favicon.ico" type="image/x-icon" />
   <link rel="stylesheet" href="/styles.css" />
-  <style>
-    body {
-      background: #121212;
-      color: #fff;
-      font-family: 'Segoe UI', sans-serif;
-      margin: 0;
-      padding: 0;
-    }
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-      padding: 2rem;
-      text-align: center;
-    }
-    .credit-btn {
-      background-color: #fcb500;
-      color: #000;
-      font-weight: bold;
-      padding: 1rem;
-      border: none;
-      border-radius: 8px;
-      font-size: 1rem;
-      transition: 0.2s ease;
-      cursor: pointer;
-      margin-bottom: 1rem;
-      width: 100%;
-    }
-    .credit-btn:hover {
-      background-color: #ffca2c;
-    }
-    #status {
-      margin-top: 1.5rem;
-      color: #0f0;
-    }
-    input[type="text"] {
-      width: 100%;
-      padding: 0.8rem;
-      margin: 1rem 0;
-      border: none;
-      border-radius: 8px;
-      font-size: 1rem;
-    }
-  </style>
 </head>
 <body>
   <header id="site-header"></header>
 
-  <main class="container">
-    <h1>💳 Buy Credits</h1>
-    <p style="color:#ccc;">Use credits to promote your tracks to real SoundCloud users.</p>
+  <main class="container" style="padding: 2rem; max-width: 600px; margin: auto;">
+    <h2>Buy Credits</h2>
+    <p>Your balance: <span id="credit-balance">--</span> credits</p>
 
-    <button onclick="buyCredits(500, 2499)" class="credit-btn">🔥 500 Credits – $24.99</button>
-    <button onclick="buyCredits(1000, 3499)" class="credit-btn">🚀 1000 Credits – $34.99</button>
-    <button onclick="buyCredits(2500, 7999)" class="credit-btn">💼 2500 Credits + Artist Plan – $79.99</button>
-    <button onclick="buyCredits(5000, 13999)" class="credit-btn">🎯 5000 Credits + Network Plan – $139.99</button>
-    <button onclick="buyCredits(25000, 54999)" class="credit-btn">👑 25,000 Credits + Promoter Plan – $549.99</button>
+    <div style="margin-top: 1rem;">
+      <button onclick="buyCredits(500)">Buy 500 Credits ($24.99)</button>
+      <button onclick="buyCredits(1000)">Buy 1000 Credits ($34.99)</button>
+      <button onclick="buyCredits(2500, 'Artist')">Buy 2500 + Artist Plan ($79.99)</button>
+      <button onclick="buyCredits(5000, 'Network')">Buy 5000 + Network Plan ($139.99)</button>
+      <button onclick="buyCredits(25000, 'Promoter')">Buy 25,000 + Promoter Plan ($549.99)</button>
+    </div>
 
-    <hr style="margin: 2rem 0; border: 0.5px solid #333;" />
-
-    <h2>🎁 Got a coupon?</h2>
-    <input type="text" id="coupon" placeholder="Enter code e.g. LAUNCH100" />
-    <button onclick="redeemCoupon()" class="credit-btn">Redeem Coupon</button>
-
-    <div id="status"></div>
+    <div style="margin-top: 2rem;">
+      <label for="coupon">Have a promo code?</label>
+      <input type="text" id="coupon" placeholder="Enter code like LAUNCH100" />
+      <button onclick="applyCoupon()">Apply</button>
+      <p id="coupon-status" style="color:limegreen;"></p>
+    </div>
   </main>
 
-  <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-
-  <!-- Try to load local config -->
+  <script src="/__/firebase/9.22.2/firebase-app-compat.js"></script>
+  <script src="/__/firebase/9.22.2/firebase-auth-compat.js"></script>
+  <script src="/__/firebase/9.22.2/firebase-firestore-compat.js"></script>
   <script src="/js/firebaseConfig.js"></script>
+  <script src="/js/firebase-init.js"></script>
+  <script src="/js/header.js"></script>
 
-  <!-- Fallback if not found -->
   <script>
-    if (!window.firebaseConfig) {
-      window.firebaseConfig = {
-        apiKey: "YOUR_API_KEY",
-        authDomain: "trackrepost-921f8.firebaseapp.com",
-        projectId: "trackrepost-921f8",
-        storageBucket: "trackrepost-921f8.appspot.com",
-        messagingSenderId: "YOUR_SENDER_ID",
-        appId: "YOUR_APP_ID",
-        measurementId: "G-XXXXXXX"
-      };
-    }
-    if (!firebase.apps.length) {
-      firebase.initializeApp(window.firebaseConfig);
-    }
+    let currentUser;
 
-    window.SQUARE_APP_ID = "YOUR_SQUARE_APP_ID";
-    window.SQUARE_LOCATION_ID = "sq0idp-PgaanSd67uGXtHuBFn7cZA";
-  </script>
-
-  <!-- Logic -->
-  <script>
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-
-    async function buyCredits(credits, priceCents) {
-      const user = auth.currentUser;
-      if (!user) return alert("Please log in to buy credits.");
-
-      try {
-        const res = await fetch("/api/square/checkout", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId: user.uid, credits, amount: priceCents }),
-        });
-
-        const data = await res.json();
-        if (data.checkoutUrl) {
-          window.location.href = data.checkoutUrl;
-        } else {
-          throw new Error("No checkout URL");
-        }
-      } catch (err) {
-        console.error("❌ Error creating checkout:", err);
-        document.getElementById("status").textContent = "Failed to create checkout.";
-      }
-    }
-
-    async function redeemCoupon() {
-      const user = auth.currentUser;
-      if (!user) return alert("Please log in first.");
-
-      const code = document.getElementById("coupon").value.trim().toUpperCase();
-      if (code !== "LAUNCH100") {
-        document.getElementById("status").textContent = "Invalid coupon code.";
+    firebase.auth().onAuthStateChanged(async (user) => {
+      if (!user) {
+        window.location.href = "/index.html";
         return;
       }
 
-      try {
-        const userRef = db.collection("users").doc(user.uid);
-        const userSnap = await userRef.get();
+      currentUser = user;
+      const userRef = firebase.firestore().collection("users").doc(user.uid);
+      const doc = await userRef.get();
+      const credits = doc.data().credits || 0;
+      document.getElementById("credit-balance").textContent = credits;
+    });
 
-        if (userSnap.exists && userSnap.data().redeemedLaunch100) {
-          document.getElementById("status").textContent = "You've already used this code.";
-          return;
+    function buyCredits(credits, plan = null) {
+      if (!currentUser) return;
+
+      fetch("https://us-central1-trackrepost-921f8.cloudfunctions.net/createCheckout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          credits,
+          userId: currentUser.uid,
+          plan
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.checkoutUrl) {
+          window.location.href = data.checkoutUrl;
+        } else {
+          alert("Checkout failed. Try again later.");
         }
+      })
+      .catch(err => {
+        console.error("❌ Error creating checkout:", err);
+        alert("Something went wrong. Please try again.");
+      });
+    }
 
-        await userRef.set(
-          {
-            credits: firebase.firestore.FieldValue.increment(100),
-            redeemedLaunch100: true,
-          },
-          { merge: true }
-        );
+    function applyCoupon() {
+      const code = document.getElementById("coupon").value.trim().toUpperCase();
+      const status = document.getElementById("coupon-status");
 
-        await db.collection("transactions").add({
-          userId: user.uid,
-          amount: 100,
-          type: "coupon",
-          reason: "Redeemed LAUNCH100",
-          timestamp: new Date(),
+      if (code === "LAUNCH100") {
+        firebase.firestore().collection("users").doc(currentUser.uid).update({
+          credits: firebase.firestore.FieldValue.increment(100),
+        }).then(() => {
+          status.textContent = "✅ 100 bonus credits added!";
+        }).catch((err) => {
+          console.error("Coupon error:", err);
+          status.textContent = "❌ Error applying coupon.";
         });
-
-        document.getElementById("status").textContent = "✅ Coupon applied! You earned 100 credits.";
-      } catch (err) {
-        console.error("❌ Coupon error:", err);
-        document.getElementById("status").textContent = "Error applying coupon.";
+      } else {
+        status.textContent = "❌ Invalid code.";
       }
     }
   </script>
-
-  <!-- Header -->
-  <script src="/js/header.js"></script>
 </body>
 </html>
+
 
 
 
