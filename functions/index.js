@@ -1,5 +1,3 @@
-// File: functions/index.js
-
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const squareConnect = require("square-connect");
@@ -18,6 +16,7 @@ oauth2.accessToken = functions.config().square.access_token;
 
 const checkoutApi = new squareConnect.CheckoutApi();
 
+// ✅ Force Firebase to use Gen 1 environment (so it doesn't fail on Cloud Run)
 exports.createCheckout = functions.https.onRequest((req, res) => {
   cors(req, res, async () => {
     if (req.method !== "POST") {
@@ -44,7 +43,7 @@ exports.createCheckout = functions.https.onRequest((req, res) => {
                 name: `${credits} Credits`,
                 quantity: "1",
                 base_price_money: {
-                  amount: credits * 10,
+                  amount: credits * 10, // 💰 Adjust price per credit here
                   currency: "CAD",
                 },
               },
@@ -57,6 +56,7 @@ exports.createCheckout = functions.https.onRequest((req, res) => {
       };
 
       const response = await checkoutApi.createCheckout(locationId, requestBody);
+
       const checkoutUrl = response.checkout.checkout_page_url;
       res.status(200).json({ checkoutUrl });
     } catch (err) {
