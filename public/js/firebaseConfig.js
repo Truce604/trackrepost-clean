@@ -1,4 +1,3 @@
-// ✅ TrackRepost Firebase Config (Compat)
 window.firebaseConfig = {
   apiKey: "AIzaSyAGmhdeSxshYSmaAbsMtda4qa1K3TeKiYw",
   authDomain: "trackrepost-921f8.firebaseapp.com",
