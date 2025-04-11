@@ -11,6 +11,6 @@
     "firebase-functions": "^6.3.2",
     "nodemailer": "^6.10.0",
     "raw-body": "^2.5.2",
-    "square": "^42.0.0"
+    "square-connect": "^6.20201216.0"
   }
 }
