@@ -1,15 +1,16 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
-const { Client, Environment } = require("square");
+const { Client } = require("square"); // no Environment
 const { v4: uuidv4 } = require("uuid");
 const cors = require("cors")({ origin: true });
 
 admin.initializeApp();
 const db = admin.firestore();
 
+// ✅ Manual environment string instead of broken enum
 const squareClient = new Client({
   accessToken: process.env.SQUARE_ACCESS_TOKEN,
-  environment: Environment.Production,
+  environment: "production", // <--- FIXED
 });
 
 exports.createCheckout = functions.https.onRequest((req, res) => {
@@ -59,6 +60,7 @@ exports.createCheckout = functions.https.onRequest((req, res) => {
     }
   });
 });
+
 
 
 
