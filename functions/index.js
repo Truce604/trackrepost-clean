@@ -1,11 +1,8 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
-const square = require("square");
+const { Client, Environment } = require("square");
 const { v4: uuidv4 } = require("uuid");
 const cors = require("cors")({ origin: true });
-
-const Client = square.Client;
-const Environment = square.Environment;
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -62,6 +59,7 @@ exports.createCheckout = functions.https.onRequest((req, res) => {
     }
   });
 });
+
 
 
 
