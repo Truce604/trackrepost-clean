@@ -9,6 +9,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       const db = firebase.firestore();
+
+      // Get all campaignIds user has already reposted
+      const repostsSnap = await db.collection("reposts")
+        .where("userId", "==", user.uid)
+        .get();
+
+      const repostedCampaignIds = new Set();
+      repostsSnap.forEach(doc => {
+        repostedCampaignIds.add(doc.data().campaignId);
+      });
+
+      // Load campaigns
       const q = db.collection("campaigns")
         .where("credits", ">", 0)
         .orderBy("createdAt", "desc");
@@ -23,6 +35,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const data = doc.data();
 
         if (data.userId === user.uid) return; // ⛔ Skip user's own campaign
+        if (repostedCampaignIds.has(doc.id)) return; // ⛔ Skip if already reposted
 
         const card = document.createElement("div");
         card.className = "campaign-card";
@@ -34,15 +47,6 @@ document.addEventListener("DOMContentLoaded", () => {
         `;
         container.appendChild(card);
         found = true;
-
-        // Check if the track has already been reposted by the user
-        db.collection("reposts").doc(`${user.uid}_${doc.id}`).get()
-          .then(repostDoc => {
-            if (repostDoc.exists) {
-              // Remove the track from UI if already reposted
-              container.removeChild(card);
-            }
-          });
       });
 
       if (!found) {
