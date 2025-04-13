@@ -21,14 +21,15 @@ auth.onAuthStateChanged(async (user) => {
 
   currentUser = user;
 
-  // Check if user already reposted this campaign
-  const repostDoc = await db.collection("reposts").doc(`${user.uid}_${campaignId}`).get();
-  if (repostDoc.exists) {
-    document.body.innerHTML = "<p>✅ You've already reposted this track.</p>";
-    return;
-  }
-
   try {
+    // 🔍 Check if user already reposted this campaign
+    const repostDoc = await db.collection("reposts").doc(`${user.uid}_${campaignId}`).get();
+    if (repostDoc.exists) {
+      document.body.innerHTML = "<p>✅ You've already reposted this track.</p>";
+      return;
+    }
+
+    // 📥 Load campaign data
     const campaignSnap = await db.collection("campaigns").doc(campaignId).get();
     if (!campaignSnap.exists) {
       document.body.innerHTML = "<p>❌ Campaign not found.</p>";
@@ -37,6 +38,7 @@ auth.onAuthStateChanged(async (user) => {
 
     campaignData = campaignSnap.data();
 
+    // 🎨 Render page
     document.body.innerHTML = `
       <div class="card">
         <img src="${campaignData.artworkUrl}" alt="Artwork" style="width:100%;border-radius:12px;margin-bottom:15px;" />
@@ -55,11 +57,11 @@ auth.onAuthStateChanged(async (user) => {
         </form>
 
         <p id="reward-estimate" style="margin-top:10px;color:#aaa;">Estimated reward: -- credits</p>
-
         <button id="repost-btn" class="confirm-button" disabled>▶️ Play track to enable boost</button>
       </div>
     `;
 
+    // 🎵 Wait for SC to play before enabling button
     const script = document.createElement("script");
     script.src = "https://w.soundcloud.com/player/api.js";
     script.onload = () => {
@@ -74,6 +76,7 @@ auth.onAuthStateChanged(async (user) => {
     };
     document.body.appendChild(script);
 
+    // 💬 Engagement input listeners
     document.addEventListener("change", (e) => {
       if (e.target.id === "comment") {
         document.getElementById("commentText").style.display = e.target.checked ? "block" : "none";
@@ -129,7 +132,7 @@ async function confirmRepost() {
       const data = await res.json();
       alert(`✅ Boost complete! You earned ${data.earnedCredits} credits.`);
 
-      // Record the repost so the campaign disappears
+      // 🔒 Ensure repost is recorded in Firestore to filter next time
       await db.collection("reposts").doc(`${userId}_${campaignId}`).set({
         userId,
         campaignId,
