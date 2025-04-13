@@ -21,6 +21,13 @@ auth.onAuthStateChanged(async (user) => {
 
   currentUser = user;
 
+  // Check if user already reposted this campaign
+  const repostDoc = await db.collection("reposts").doc(`${user.uid}_${campaignId}`).get();
+  if (repostDoc.exists) {
+    document.body.innerHTML = "<p>✅ You've already reposted this track.</p>";
+    return;
+  }
+
   try {
     const campaignSnap = await db.collection("campaigns").doc(campaignId).get();
     if (!campaignSnap.exists) {
@@ -105,7 +112,6 @@ async function confirmRepost() {
   const commentText = document.getElementById("commentText").value.trim();
 
   try {
-    // Perform the repost action and update Firestore
     const res = await fetch("https://us-central1-trackrepost-921f8.cloudfunctions.net/repostAndReward", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -122,15 +128,18 @@ async function confirmRepost() {
     if (res.ok) {
       const data = await res.json();
       alert(`✅ Boost complete! You earned ${data.earnedCredits} credits.`);
-      
-      // Remove the track from user's view after reposting
-      const userRepostRef = db.collection("reposts").doc(`${userId}_${campaignId}`);
-      await userRepostRef.set({
+
+      // Record the repost so the campaign disappears
+      await db.collection("reposts").doc(`${userId}_${campaignId}`).set({
+        userId,
         campaignId,
+        trackUrl: campaignData.trackUrl,
         liked,
         followed,
         commented,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        comment: commentText,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        prompted: false
       });
 
       window.location.href = "dashboard.html";
