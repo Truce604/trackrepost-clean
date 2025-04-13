@@ -7,35 +7,38 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    try {
-      const db = firebase.firestore();
+    const db = firebase.firestore();
+    const userId = user.uid;
 
-      // Get all campaignIds user has already reposted
-      const repostsSnap = await db.collection("reposts")
-        .where("userId", "==", user.uid)
+    try {
+      // ✅ Step 1: Get all reposted campaignIds for this user
+      const repostsSnapshot = await db.collection("reposts")
+        .where("userId", "==", userId)
         .get();
 
       const repostedCampaignIds = new Set();
-      repostsSnap.forEach(doc => {
-        repostedCampaignIds.add(doc.data().campaignId);
+      repostsSnapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.campaignId) {
+          repostedCampaignIds.add(data.campaignId);
+        }
       });
 
-      // Load campaigns
-      const q = db.collection("campaigns")
+      // ✅ Step 2: Load campaigns
+      const campaignSnapshot = await db.collection("campaigns")
         .where("credits", ">", 0)
-        .orderBy("createdAt", "desc");
-
-      const snapshot = await q.get();
+        .orderBy("createdAt", "desc")
+        .get();
 
       container.innerHTML = "";
-
       let found = false;
 
-      snapshot.forEach(doc => {
+      campaignSnapshot.forEach(doc => {
         const data = doc.data();
+        const id = doc.id;
 
-        if (data.userId === user.uid) return; // ⛔ Skip user's own campaign
-        if (repostedCampaignIds.has(doc.id)) return; // ⛔ Skip if already reposted
+        // ❌ Skip own campaigns or already reposted
+        if (data.userId === userId || repostedCampaignIds.has(id)) return;
 
         const card = document.createElement("div");
         card.className = "campaign-card";
@@ -43,7 +46,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <h3>${data.genre}</h3>
           <p><a href="${data.trackUrl}" target="_blank">🎵 Listen</a></p>
           <p>💰 Credits: ${data.credits}</p>
-          <a href="repost-action.html?id=${doc.id}" class="button">🔁 Repost This Track</a>
+          <a href="repost-action.html?id=${id}" class="button">🔁 Repost This Track</a>
         `;
         container.appendChild(card);
         found = true;
@@ -59,4 +62,5 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
+
 
