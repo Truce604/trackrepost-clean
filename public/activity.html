@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>📜 Activity Log - TrackRepost</title>
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+  <script src="/js/firebaseConfig.js"></script>
+  <script>firebase.initializeApp(window.firebaseConfig);</script>
+
+  <!-- Header -->
+  <script type="module" src="/js/header.js"></script>
+
+  <style>
+    body {
+      background: #0d0d0d;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      padding: 30px 20px;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .activity-card {
+      background: #1a1a1a;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.4);
+    }
+
+    .activity-card p {
+      margin: 6px 0;
+      color: #ccc;
+    }
+
+    .type-earned {
+      color: #00ff99;
+    }
+
+    .type-spent {
+      color: #ff6666;
+    }
+
+    .type-other {
+      color: #ffd700;
+    }
+
+    footer {
+      text-align: center;
+      font-size: 13px;
+      color: #888;
+      margin-top: 60px;
+    }
+  </style>
+</head>
+<body>
+  <div id="site-header"></div>
+
+  <h1>📜 Your Recent Activity</h1>
+
+  <div id="activity-log">
+    <p>Loading activity...</p>
+  </div>
+
+  <footer>
+    <p>© 2025 TrackRepost. All Rights Reserved.</p>
+  </footer>
+
+  <script>
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+    const container = document.getElementById("activity-log");
+
+    auth.onAuthStateChanged(async (user) => {
+      if (!user) {
+        container.innerHTML = "<p>Please log in to view your activity.</p>";
+        return;
+      }
+
+      try {
+        const q = db.collection("transactions")
+          .where("userId", "==", user.uid)
+          .orderBy("timestamp", "desc");
+
+        const snap = await q.get();
+        container.innerHTML = "";
+
+        if (snap.empty) {
+          container.innerHTML = "<p>No activity found.</p>";
+          return;
+        }
+
+        snap.forEach(doc => {
+          const tx = doc.data();
+          const div = document.createElement("div");
+          div.className = "activity-card";
+          const typeClass = tx.type === "earned" ? "type-earned" : tx.type === "spent" ? "type-spent" : "type-other";
+
+          div.innerHTML = `
+            <p><strong class="${typeClass}">${tx.type.toUpperCase()}</strong> — ${tx.amount} credits</p>
+            <p>${tx.reason || "No description"}</p>
+            <p><small>${new Date(tx.timestamp?.toDate()).toLocaleString()}</small></p>
+          `;
+          container.appendChild(div);
+        });
+
+      } catch (err) {
+        console.error("Error loading activity:", err);
+        container.innerHTML = "<p>❌ Failed to load activity log.</p>";
+      }
+    });
+  </script>
+</body>
+</html>
