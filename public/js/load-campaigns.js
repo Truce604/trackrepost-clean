@@ -1,38 +1,28 @@
-import { db, auth } from "./firebase-init.js";
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-  orderBy
-} from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
+// Import Firebase modules and initialize app
+import { db } from "./firebase-init.js";
+import { query, collection, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
 
 const campaignContainer = document.getElementById("campaigns");
 
-onAuthStateChanged(auth, async (user) => {
-  if (!user) {
-    campaignContainer.innerHTML = `<p>Please log in to view your campaigns.</p>`;
-    return;
-  }
+// Function to load campaigns from Firestore
+const loadCampaigns = async () => {
+  campaignContainer.innerHTML = "<p>Loading campaigns...</p>";
 
   try {
-    const q = query(
-      collection(db, "campaigns"),
-      where("userId", "==", user.uid),
-      orderBy("createdAt", "desc")
-    );
-
+    // Query to get campaigns ordered by creation date
+    const q = query(collection(db, "campaigns"), orderBy("createdAt", "desc"));
     const snapshot = await getDocs(q);
 
+    // If no campaigns found, display a message
     if (snapshot.empty) {
-      campaignContainer.innerHTML = `<p>You haven't submitted any campaigns yet.</p>`;
+      campaignContainer.innerHTML = "<p>No campaigns available yet.</p>";
       return;
     }
 
     campaignContainer.innerHTML = "";
 
-    snapshot.forEach(async (doc) => {
+    // Iterate over each campaign document and display its details
+    snapshot.forEach(doc => {
       const data = doc.data();
       const card = document.createElement("div");
       card.className = "campaign-card";
@@ -42,20 +32,17 @@ onAuthStateChanged(auth, async (user) => {
         <p>Credits: ${data.credits}</p>
         <p class="timestamp">${data.createdAt?.toDate().toLocaleString() || "N/A"}</p>
       `;
-
-      // Check if the campaign has been reposted by the user
-      const repostDoc = await db.collection("reposts").doc(`${user.uid}_${doc.id}`).get();
-      if (repostDoc.exists) {
-        // Skip this campaign from being displayed
-        return;
-      }
-
       campaignContainer.appendChild(card);
     });
-
   } catch (err) {
     console.error("Error loading campaigns:", err);
-    campaignContainer.innerHTML = `<p>❌ Error loading your campaigns.</p>`;
+    campaignContainer.innerHTML = "<p>❌ Error loading campaigns.</p>";
   }
+};
+
+// Call the function to load campaigns when the page loads
+window.addEventListener("DOMContentLoaded", () => {
+  loadCampaigns();
 });
+
 
