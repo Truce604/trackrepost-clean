@@ -4,18 +4,21 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Explore Campaigns | TrackRepost</title>
-  <link rel="stylesheet" href="/styles.css"/>
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="icon" href="/images/favicon.ico" type="image/x-icon" />
+  <meta name="description" content="Discover music campaigns to repost and earn credits on TrackRepost." />
 
   <!-- ✅ Firebase Compat SDKs -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
-  <!-- ✅ Firebase Config & Initialization -->
-  <script src="/js/firebaseConfig.js"></script>
-  <script src="/js/firebase-init.js"></script>
+  <!-- ✅ Firebase Config & Init -->
+  <script src="/js/firebaseConfig.js" defer></script>
+  <script src="/js/firebase-init.js" defer></script>
 
-  <!-- ✅ Campaign Loader -->
+  <!-- ✅ Header + Campaign Loader -->
+  <script src="/js/header.js" defer></script>
   <script src="/js/load-campaigns.js" defer></script>
 </head>
 <body>
@@ -23,21 +26,13 @@
 
   <main class="container">
     <h1>🔥 Explore Campaigns</h1>
-    <div id="campaigns">
+    <div id="campaigns" class="campaign-grid">
       <p>Loading campaigns...</p>
     </div>
   </main>
 
   <footer>
-    <p>&copy; 2025 TrackRepost</p>
+    <p>&copy; 2025 TrackRepost.com – All rights reserved.</p>
   </footer>
-
-  <!-- ✅ Dynamic Header -->
-  <script src="/js/header.js" defer></script>
 </body>
 </html>
-
-
-
-
-
