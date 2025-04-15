@@ -6,12 +6,17 @@
   <title>Submit Campaign – TrackRepost</title>
   <link rel="stylesheet" href="styles.css" />
 
-  <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <!-- ✅ Firebase Compat SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+  <!-- ✅ Firebase Config & Init -->
   <script src="/js/firebaseConfig.js"></script>
-  <script>firebase.initializeApp(window.firebaseConfig);</script>
+  <script src="/js/firebase-init.js"></script>
+
+  <!-- ✅ Header -->
+  <script type="module" src="/js/header.js"></script>
 
   <style>
     body {
@@ -93,9 +98,7 @@
   </style>
 </head>
 <body>
-  <header>
-    <img src="/assets/logo-trackrepost.png" alt="TrackRepost Logo" />
-  </header>
+  <div id="site-header"></div>
 
   <main class="container">
     <h2>🚀 Submit a Campaign</h2>
@@ -121,10 +124,8 @@
     <p>© 2025 TrackRepost. All Rights Reserved.</p>
   </footer>
 
-  <!-- Module version of submit-campaign.js -->
-  <script type="module" src="/js/submit-campaign.js"></script>
+  <!-- ✅ Campaign Submit Logic -->
+  <script src="/js/submit-campaign.js" defer></script>
 </body>
 </html>
-
-
 
