@@ -2,65 +2,67 @@ firebase.auth().onAuthStateChanged(async (user) => {
   const container = document.getElementById("campaigns");
 
   if (!user) {
-    container.innerHTML = "<p>Please log in to view available campaigns.</p>";
+    container.innerHTML = `<p>Please sign in to view campaigns.</p>`;
     return;
   }
 
   try {
     const db = firebase.firestore();
 
-    // Get all reposted campaign IDs by this user
-    const repostSnapshot = await db
-      .collection("reposts")
+    // Step 1: Get all campaigns the user already reposted
+    const repostsSnapshot = await db.collection("reposts")
       .where("userId", "==", user.uid)
       .get();
 
     const repostedCampaignIds = new Set();
-    repostSnapshot.forEach(doc => {
-      repostedCampaignIds.add(doc.data().campaignId);
+    repostsSnapshot.forEach(doc => {
+      const data = doc.data();
+      if (data.campaignId) {
+        repostedCampaignIds.add(data.campaignId);
+      }
     });
 
-    // Get all campaigns with available credits
-    const campaignSnapshot = await db
-      .collection("campaigns")
+    // Step 2: Get all available campaigns, excluding ones already reposted
+    const campaignsSnapshot = await db.collection("campaigns")
       .where("credits", ">", 0)
+      .orderBy("credits", "desc") // ✅ must order by the inequality field first
       .orderBy("createdAt", "desc")
       .get();
 
     container.innerHTML = "";
 
-    let foundAny = false;
+    if (campaignsSnapshot.empty) {
+      container.innerHTML = "<p>No campaigns found.</p>";
+      return;
+    }
 
-    campaignSnapshot.forEach(doc => {
-      const campaign = doc.data();
-      const campaignId = doc.id;
+    let found = false;
 
-      // Hide own campaigns and reposted ones
-      if (campaign.userId === user.uid || repostedCampaignIds.has(campaignId)) return;
+    campaignsSnapshot.forEach(doc => {
+      if (repostedCampaignIds.has(doc.id)) return;
 
-      const artwork = campaign.artworkUrl || "/images/placeholder-artwork.jpg";
+      const c = doc.data();
+      const id = doc.id;
 
       const card = document.createElement("div");
       card.className = "campaign-card";
       card.innerHTML = `
-        <img src="${artwork}" alt="Artwork" style="width: 100%; height: 200px; object-fit: cover; border-radius: 8px;">
-        <h3>${campaign.title || "Untitled Track"}</h3>
-        <p>👤 ${campaign.artist || "Unknown Artist"}</p>
-        <p>🎵 Genre: ${campaign.genre}</p>
-        <p>💳 Credits: ${campaign.credits}</p>
-        <a class="button" href="repost-action.html?id=${campaignId}">🔁 Repost This Track</a>
+        <h3>${c.title || "Untitled Track"} <span style="font-weight: normal;">by</span> ${c.artist || "Unknown"}</h3>
+        <p><strong>Genre:</strong> ${c.genre}</p>
+        <p><strong>Credits:</strong> ${c.credits}</p>
+        <a href="repost-action.html?id=${id}" class="button">🔁 Repost This Track</a>
       `;
-
       container.appendChild(card);
-      foundAny = true;
+      found = true;
     });
 
-    if (!foundAny) {
-      container.innerHTML = "<p>No new campaigns available for repost right now.</p>";
+    if (!found) {
+      container.innerHTML = "<p>🎉 You’ve reposted all available tracks for now!</p>";
     }
 
   } catch (err) {
     console.error("Error loading campaigns:", err);
-    container.innerHTML = "<p>❌ Failed to load campaigns. Please try again later.</p>";
+    document.getElementById("campaigns").innerHTML = `<p>❌ Error loading campaigns.</p>`;
   }
 });
+
