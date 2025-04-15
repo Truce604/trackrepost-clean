@@ -2,14 +2,20 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Pro Plans - TrackRepost</title>
   <link rel="stylesheet" href="styles.css" />
+
+  <!-- ✅ Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
   <script src="/js/firebaseConfig.js"></script>
   <script>firebase.initializeApp(window.firebaseConfig);</script>
+
+  <!-- ✅ Header -->
+  <script type="module" src="/js/header.js"></script>
+
   <style>
     body {
       background: #0d0d0d;
@@ -75,6 +81,8 @@
   </style>
 </head>
 <body>
+  <div id="site-header"></div>
+
   <h1>🚀 Pro Plans</h1>
 
   <div class="plan">
@@ -82,7 +90,7 @@
     <p>Run multiple campaigns at once</p>
     <p>Earn a Pro badge on your profile</p>
     <div class="price">💳 $79.99 (2500 Credits)</div>
-    <button onclick="location.href='credits.html'">Buy Plan</button>
+    <button onclick="location.href='credits.html?plan=artist'">Buy Plan</button>
   </div>
 
   <div class="plan">
@@ -90,7 +98,7 @@
     <p>Everything in Artist Plan + Repost priority</p>
     <p>More credits = more reach</p>
     <div class="price">💳 $139.99 (5000 Credits)</div>
-    <button onclick="location.href='credits.html'">Buy Plan</button>
+    <button onclick="location.href='credits.html?plan=network'">Buy Plan</button>
   </div>
 
   <div class="plan">
@@ -98,7 +106,7 @@
     <p>Max visibility and boost potential</p>
     <p>Top-tier promotion & status</p>
     <div class="price">💳 $549.99 (25000 Credits)</div>
-    <button onclick="location.href='credits.html'">Buy Plan</button>
+    <button onclick="location.href='credits.html?plan=promoter'">Buy Plan</button>
   </div>
 
   <div class="note">
