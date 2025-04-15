@@ -3,15 +3,18 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Dashboard - TrackRepost</title>
+  <title>Notifications - TrackRepost</title>
   <link rel="stylesheet" href="styles.css" />
 
-  <!-- Firebase -->
+  <!-- Firebase Compat SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
   <script src="/js/firebaseConfig.js"></script>
   <script>firebase.initializeApp(window.firebaseConfig);</script>
+
+  <!-- Header -->
+  <script type="module" src="/js/header.js"></script>
 
   <style>
     body {
@@ -22,97 +25,43 @@
       padding: 0;
     }
 
-    header {
-      text-align: center;
-      background: #1a1a1a;
-      padding: 20px;
-      border-bottom: 1px solid #333;
-    }
-
-    header img {
-      height: 60px;
-      margin-bottom: 10px;
-    }
-
     h1 {
-      margin: 0;
-      font-size: 28px;
-      color: #ffd700;
+      text-align: center;
+      padding: 30px 20px 10px;
+      color: #ffa500;
     }
 
     .container {
       max-width: 900px;
-      margin: 30px auto;
-      padding: 0 15px;
-    }
-
-    .user-summary {
-      background: #222;
+      margin: 0 auto;
       padding: 20px;
-      border-radius: 12px;
-      margin-bottom: 20px;
     }
 
-    .user-summary p {
-      margin: 6px 0;
-    }
-
-    .badge {
-      display: inline-block;
-      padding: 4px 10px;
-      border-radius: 6px;
-      font-size: 13px;
-      margin-top: 6px;
-    }
-
-    .badge.pro {
-      background: #00c389;
-      color: #000;
-      font-weight: bold;
-    }
-
-    .badge.free {
-      background: #444;
-      color: #fff;
-    }
-
-    .campaign {
-      background: #1a1a1a;
-      border-radius: 12px;
-      margin-bottom: 20px;
-      padding: 20px;
-      box-shadow: 0 0 8px rgba(0,0,0,0.6);
-    }
-
-    .campaign iframe {
-      width: 100%;
-      height: 166px;
+    .notification {
+      background: #1e1e1e;
+      border: 1px solid #333;
+      padding: 15px 20px;
       border-radius: 10px;
-      border: none;
-      margin-bottom: 10px;
+      margin-bottom: 15px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.4);
     }
 
-    .campaign .info h2 {
-      margin: 0 0 6px;
-      font-size: 20px;
+    .notification h3 {
+      margin: 0 0 8px;
       color: #ffd700;
     }
 
-    .campaign .info p {
-      margin: 2px 0;
-      color: #aaa;
+    .notification p {
+      margin: 5px 0;
       font-size: 14px;
+      color: #bbb;
     }
 
-    .campaign .button {
-      display: inline-block;
-      background: #ff9900;
-      color: #000;
-      padding: 10px 16px;
-      border-radius: 8px;
-      font-weight: bold;
-      text-decoration: none;
-      margin-top: 10px;
+    .no-notifications {
+      text-align: center;
+      padding: 60px 20px;
+      font-size: 1.2rem;
+      color: #666;
     }
 
     footer {
@@ -123,46 +72,63 @@
       padding: 20px 0;
       background: #1a1a1a;
     }
-
-    #logout-btn {
-      margin-top: 20px;
-      padding: 8px 14px;
-      font-size: 14px;
-      background: #444;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-
-    #logout-btn:hover {
-      background: #666;
-    }
   </style>
 </head>
 <body>
-  <header>
-    <img src="/assets/logo-trackrepost.png" alt="TrackRepost Logo" />
-    <h1>📊 Your Dashboard</h1>
-  </header>
+  <div id="site-header"></div>
 
-  <main class="container">
-    <div class="user-summary">
-      <p id="userInfo">Loading user info...</p>
-      <p><strong>Credits:</strong> <span id="creditBalance">Loading...</span></p>
-      <div id="planBadge"></div>
-      <button id="logout-btn">Logout</button>
-    </div>
-
-    <section id="campaigns">
-      <p>Loading your campaigns...</p>
-    </section>
+  <h1>🔔 Notifications</h1>
+  <main class="container" id="notifications-container">
+    <p class="no-notifications">Loading your notifications...</p>
   </main>
 
   <footer>
     <p>© 2025 TrackRepost. All Rights Reserved.</p>
   </footer>
 
-  <script src="/js/dashboard.js"></script>
+  <script>
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+    const container = document.getElementById("notifications-container");
+
+    auth.onAuthStateChanged(async (user) => {
+      if (!user) {
+        container.innerHTML = `<p class="no-notifications">⚠️ Please log in to see notifications.</p>`;
+        return;
+      }
+
+      try {
+        const snap = await db.collection("transactions")
+          .where("userId", "==", user.uid)
+          .orderBy("timestamp", "desc")
+          .limit(15)
+          .get();
+
+        if (snap.empty) {
+          container.innerHTML = `<p class="no-notifications">🎉 No recent activity yet. Start reposting or submit a campaign!</p>`;
+          return;
+        }
+
+        container.innerHTML = "";
+        snap.forEach(doc => {
+          const data = doc.data();
+          const date = data.timestamp?.toDate().toLocaleString() || "Unknown time";
+
+          const div = document.createElement("div");
+          div.className = "notification";
+          div.innerHTML = `
+            <h3>${data.type === "earned" ? "💰 Credits Earned" : "📤 Credits Spent"}</h3>
+            <p><strong>Amount:</strong> ${data.amount}</p>
+            <p><strong>Reason:</strong> ${data.reason || "No reason specified"}</p>
+            <p><strong>Time:</strong> ${date}</p>
+          `;
+          container.appendChild(div);
+        });
+      } catch (err) {
+        console.error("Failed to load notifications", err);
+        container.innerHTML = `<p class="no-notifications">❌ Failed to load notifications.</p>`;
+      }
+    });
+  </script>
 </body>
 </html>
