@@ -3,15 +3,20 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Explore Campaigns - TrackRepost</title>
+  <title>🔥 Repost & Earn Credits - TrackRepost</title>
   <link rel="stylesheet" href="styles.css" />
 
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+  <!-- ✅ Firebase Compat SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+  <!-- ✅ Firebase Config & Init -->
   <script src="/js/firebaseConfig.js"></script>
-  <script>firebase.initializeApp(window.firebaseConfig);</script>
+  <script src="/js/firebase-init.js"></script>
+
+  <!-- ✅ Site Header -->
+  <script type="module" src="/js/header.js"></script>
 
   <style>
     body {
@@ -54,7 +59,7 @@
       margin-top: 12px;
       padding: 10px 20px;
       font-weight: bold;
-      background-color: #4caf50;
+      background-color: #ff9900;
       color: white;
       border: none;
       border-radius: 8px;
@@ -62,7 +67,7 @@
     }
 
     .campaign .repost-btn:hover {
-      background-color: #45a049;
+      background-color: #e88a00;
     }
   </style>
 </head>
@@ -80,41 +85,64 @@
     <p>© 2025 TrackRepost. All rights reserved.</p>
   </footer>
 
-  <!-- Header & Repost Script -->
-  <script type="module" src="/js/header.js"></script>
   <script>
     const db = firebase.firestore();
+    const auth = firebase.auth();
     const campaignList = document.getElementById("campaignList");
 
-    async function loadCampaigns() {
-      const snap = await db.collection("campaigns").orderBy("createdAt", "desc").get();
-      if (snap.empty) {
-        campaignList.innerHTML = "<p>No campaigns found.</p>";
+    auth.onAuthStateChanged(async (user) => {
+      if (!user) {
+        campaignList.innerHTML = "<p>Please sign in to view campaigns.</p>";
         return;
       }
 
-      campaignList.innerHTML = "";
-      snap.forEach(doc => {
-        const c = doc.data();
-        const id = doc.id;
+      try {
+        const repostSnap = await db.collection("reposts")
+          .where("userId", "==", user.uid)
+          .get();
+        const repostedIds = repostSnap.docs.map(doc => doc.data().campaignId);
 
-        const el = document.createElement("div");
-        el.className = "campaign";
-        el.innerHTML = `
-          <h3>${c.title || "Untitled Track"} <span style="font-weight: normal;">by</span> ${c.artist || "Unknown"}</h3>
-          <p><strong>Genre:</strong> ${c.genre}</p>
-          <p><strong>Credits Available:</strong> ${c.credits}</p>
-          <iframe scrolling="no" frameborder="no" allow="autoplay"
-            src="https://w.soundcloud.com/player/?url=${encodeURIComponent(c.trackUrl)}&color=%23ff5500&auto_play=false&show_user=true"></iframe>
-          <button class="repost-btn" onclick="location.href='repost-action.html?id=${id}'">
-            ✅ Repost This Track
-          </button>
-        `;
-        campaignList.appendChild(el);
-      });
-    }
+        const snap = await db.collection("campaigns")
+          .orderBy("createdAt", "desc")
+          .get();
 
-    loadCampaigns();
+        if (snap.empty) {
+          campaignList.innerHTML = "<p>No campaigns found.</p>";
+          return;
+        }
+
+        campaignList.innerHTML = "";
+        snap.forEach(doc => {
+          if (repostedIds.includes(doc.id)) return;
+
+          const c = doc.data();
+          const id = doc.id;
+
+          const el = document.createElement("div");
+          el.className = "campaign";
+          el.innerHTML = `
+            <h3>${c.title || "Untitled Track"} <span style="font-weight: normal;">by</span> ${c.artist || "Unknown"}</h3>
+            <p><strong>Genre:</strong> ${c.genre}</p>
+            <p><strong>Credits Available:</strong> ${c.credits}</p>
+            <iframe scrolling="no" frameborder="no" allow="autoplay"
+              src="https://w.soundcloud.com/player/?url=${encodeURIComponent(c.trackUrl)}&color=%23ff5500&auto_play=false&show_user=true"></iframe>
+            <button class="repost-btn" onclick="location.href='repost-action.html?id=${id}'">
+              ✅ Repost This Track
+            </button>
+          `;
+          campaignList.appendChild(el);
+        });
+
+        if (!campaignList.hasChildNodes()) {
+          campaignList.innerHTML = "<p>🎉 You’ve reposted all available tracks for now!</p>";
+        }
+
+      } catch (err) {
+        console.error("Error loading campaigns:", err);
+        campaignList.innerHTML = "<p>❌ Error loading campaigns.</p>";
+      }
+    });
   </script>
 </body>
 </html>
+
