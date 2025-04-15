@@ -1,160 +1,55 @@
-// ✅ Initialize Firebase App
-if (!firebase.apps.length) {
-  firebase.initializeApp(window.firebaseConfig);
-}
+// Import Firebase modules and initialize app
+import { db, auth } from "./firebase-init.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
 
-const auth = firebase.auth();
-const db = firebase.firestore();
+const campaignContainer = document.getElementById("campaigns");
 
-const params = new URLSearchParams(window.location.search);
-const campaignId = params.get("id");
-
-let currentUser = null;
-let campaignData = null;
-let scWidget = null;
-
-auth.onAuthStateChanged(async (user) => {
+onAuthStateChanged(auth, async (user) => {
   if (!user) {
-    document.body.innerHTML = "<p>Please log in to boost.</p>";
+    campaignContainer.innerHTML = `<p>Please log in to view your campaigns.</p>`;
     return;
   }
 
-  currentUser = user;
-
   try {
-    // 🔍 Check if user already reposted this campaign
-    const repostDoc = await db.collection("reposts").doc(`${user.uid}_${campaignId}`).get();
-    if (repostDoc.exists) {
-      document.body.innerHTML = "<p>✅ You've already reposted this track.</p>";
+    const q = query(
+      collection(db, "campaigns"),
+      where("userId", "==", user.uid),
+      orderBy("createdAt", "desc")
+    );
+
+    const snapshot = await getDocs(q);
+
+    if (snapshot.empty) {
+      campaignContainer.innerHTML = `<p>You haven't submitted any campaigns yet.</p>`;
       return;
     }
 
-    // 📥 Load campaign data
-    const campaignSnap = await db.collection("campaigns").doc(campaignId).get();
-    if (!campaignSnap.exists) {
-      document.body.innerHTML = "<p>❌ Campaign not found.</p>";
-      return;
-    }
+    campaignContainer.innerHTML = "";
 
-    campaignData = campaignSnap.data();
+    snapshot.forEach(async (doc) => {
+      const data = doc.data();
+      const card = document.createElement("div");
+      card.className = "campaign-card";
+      card.innerHTML = `
+        <h3>${data.genre}</h3>
+        <p><a href="${data.soundcloudUrl}" target="_blank">SoundCloud Track</a></p>
+        <p>Credits: ${data.credits}</p>
+        <p class="timestamp">${data.createdAt?.toDate().toLocaleString() || "N/A"}</p>
+      `;
 
-    // 🎨 Render page
-    document.body.innerHTML = `
-      <div class="card">
-        <img src="${campaignData.artworkUrl}" alt="Artwork" style="width:100%;border-radius:12px;margin-bottom:15px;" />
-        <h2>${campaignData.title}</h2>
-        <p>👤 ${campaignData.artist}</p>
-        <p>🎧 ${campaignData.genre} | 💳 ${campaignData.credits} credits</p>
-
-        <iframe id="sc-player" width="100%" height="140" scrolling="no" frameborder="no"
-          src="https://w.soundcloud.com/player/?url=${encodeURIComponent(campaignData.trackUrl)}&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&visual=false"></iframe>
-
-        <form id="engagement-form" style="margin-top:20px;text-align:left;">
-          <label><input type="checkbox" id="like" checked /> 💖 Like this track (+1 credit)</label><br/>
-          <label><input type="checkbox" id="follow" checked /> 👣 Follow the artist (+2 credits)</label><br/>
-          <label><input type="checkbox" id="comment" /> 💬 Leave a comment (+2 credits)</label><br/>
-          <textarea id="commentText" placeholder="Write a comment..." style="width:100%;border-radius:8px;margin-top:5px;display:none;"></textarea>
-        </form>
-
-        <p id="reward-estimate" style="margin-top:10px;color:#aaa;">Estimated reward: -- credits</p>
-        <button id="repost-btn" class="confirm-button" disabled>▶️ Play track to enable boost</button>
-      </div>
-    `;
-
-    // 🎵 Wait for SC to play before enabling button
-    const script = document.createElement("script");
-    script.src = "https://w.soundcloud.com/player/api.js";
-    script.onload = () => {
-      const iframe = document.getElementById("sc-player");
-      scWidget = SC.Widget(iframe);
-      scWidget.bind(SC.Widget.Events.PLAY, () => {
-        const btn = document.getElementById("repost-btn");
-        btn.disabled = false;
-        btn.textContent = "✅ Boost & Earn";
-        btn.onclick = confirmRepost;
-      });
-    };
-    document.body.appendChild(script);
-
-    // 💬 Engagement input listeners
-    document.addEventListener("change", (e) => {
-      if (e.target.id === "comment") {
-        document.getElementById("commentText").style.display = e.target.checked ? "block" : "none";
+      // Check if the campaign has been reposted by the user
+      const repostDoc = await db.collection("reposts").doc(`${user.uid}_${doc.id}`).get();
+      if (repostDoc.exists) {
+        // Skip this campaign from being displayed
+        return;
       }
-      updateEstimatedReward();
-    });
 
-    document.addEventListener("input", (e) => {
-      if (e.target.id === "commentText") updateEstimatedReward();
+      campaignContainer.appendChild(card);
     });
 
   } catch (err) {
-    console.error("Error loading campaign:", err);
-    document.body.innerHTML = "<p>⚠️ Error loading campaign info.</p>";
+    console.error("Error loading campaigns:", err);
+    campaignContainer.innerHTML = `<p>❌ Error loading your campaigns.</p>`;
   }
 });
-
-async function updateEstimatedReward() {
-  const userRef = db.collection("users").doc(currentUser.uid);
-  const userSnap = await userRef.get();
-  const followers = userSnap.data().soundcloud?.followers || 0;
-  let total = Math.floor(followers / 100);
-
-  if (document.getElementById("like").checked) total += 1;
-  if (document.getElementById("follow").checked) total += 2;
-  if (document.getElementById("comment").checked && document.getElementById("commentText").value.trim()) total += 2;
-
-  document.getElementById("reward-estimate").textContent = `Estimated reward: ${total} credits`;
-}
-
-async function confirmRepost() {
-  const userId = currentUser.uid;
-  const liked = document.getElementById("like").checked;
-  const followed = document.getElementById("follow").checked;
-  const commented = document.getElementById("comment").checked;
-  const commentText = document.getElementById("commentText").value.trim();
-
-  try {
-    const res = await fetch("https://us-central1-trackrepost-921f8.cloudfunctions.net/repostAndReward", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        userId,
-        campaignId,
-        liked,
-        followed,
-        commented,
-        commentText
-      })
-    });
-
-    if (res.ok) {
-      const data = await res.json();
-      alert(`✅ Boost complete! You earned ${data.earnedCredits} credits.`);
-
-      // 🔒 Ensure repost is recorded in Firestore to filter next time
-      await db.collection("reposts").doc(`${userId}_${campaignId}`).set({
-        userId,
-        campaignId,
-        trackUrl: campaignData.trackUrl,
-        liked,
-        followed,
-        commented,
-        comment: commentText,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-        prompted: false
-      });
-
-      window.location.href = "dashboard.html";
-    } else {
-      const error = await res.text();
-      alert(`❌ Boost failed: ${error}`);
-    }
-
-  } catch (err) {
-    console.error("🔥 Boost error:", err);
-    alert("❌ Something went wrong during your boost.");
-  }
-}
-
 
