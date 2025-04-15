@@ -11,7 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const userId = user.uid;
 
     try {
-      // ✅ Step 1: Get all reposted campaignIds for this user
+      // ✅ Step 1: Fetch user's repost history
       const repostsSnapshot = await db.collection("reposts")
         .where("userId", "==", userId)
         .get();
@@ -24,43 +24,44 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       });
 
-      // ✅ Step 2: Load campaigns
+      // ✅ Step 2: Fetch all available campaigns
       const campaignSnapshot = await db.collection("campaigns")
         .where("credits", ">", 0)
         .orderBy("createdAt", "desc")
         .get();
 
       container.innerHTML = "";
-      let found = false;
+      let foundAny = false;
 
       campaignSnapshot.forEach(doc => {
         const data = doc.data();
         const id = doc.id;
 
-        // ❌ Skip own campaigns or already reposted
+        // ❌ Skip own campaigns and already reposted ones
         if (data.userId === userId || repostedCampaignIds.has(id)) return;
 
         const card = document.createElement("div");
         card.className = "campaign-card";
         card.innerHTML = `
-          <h3>${data.genre}</h3>
-          <p><a href="${data.trackUrl}" target="_blank">🎵 Listen</a></p>
-          <p>💰 Credits: ${data.credits}</p>
+          <h3>${data.title || "Untitled"}</h3>
+          <p><strong>Artist:</strong> ${data.artist || "Unknown"}</p>
+          <p><strong>Genre:</strong> ${data.genre}</p>
+          <p><strong>Credits:</strong> ${data.credits}</p>
+          <p><a href="${data.trackUrl}" target="_blank">🎵 Listen on SoundCloud</a></p>
           <a href="repost-action.html?id=${id}" class="button">🔁 Repost This Track</a>
         `;
+
         container.appendChild(card);
-        found = true;
+        foundAny = true;
       });
 
-      if (!found) {
-        container.innerHTML = `<p>No campaigns available to repost right now.</p>`;
+      if (!foundAny) {
+        container.innerHTML = `<p>🎉 You've reposted all available tracks for now!</p>`;
       }
 
     } catch (err) {
-      console.error("Error loading campaigns:", err);
-      container.innerHTML = `<p>❌ Error loading repost campaigns.</p>`;
+      console.error("❌ Error loading repost campaigns:", err);
+      container.innerHTML = `<p>❌ Error loading campaigns. Please try again later.</p>`;
     }
   });
 });
-
-
