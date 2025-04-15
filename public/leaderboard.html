@@ -6,7 +6,7 @@
   <title>🏆 Leaderboard - TrackRepost</title>
   <link rel="stylesheet" href="styles.css" />
 
-  <!-- Firebase -->
+  <!-- Firebase Compat SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
@@ -14,42 +14,60 @@
   <script>firebase.initializeApp(window.firebaseConfig);</script>
 
   <style>
+    body {
+      background-color: #0d0d0d;
+      color: white;
+      font-family: Arial, sans-serif;
+    }
+
     .leaderboard-container {
-      max-width: 700px;
+      max-width: 800px;
       margin: 40px auto;
       background: #1e1e1e;
-      padding: 20px;
-      border-radius: 12px;
-      color: white;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.4);
     }
 
     h2 {
       text-align: center;
       margin-bottom: 20px;
+      font-size: 24px;
+      color: #ffa500;
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
-      color: #fff;
+      margin-top: 10px;
     }
 
     th, td {
-      padding: 10px;
+      padding: 12px;
       text-align: left;
-      border-bottom: 1px solid #444;
+      border-bottom: 1px solid #333;
     }
 
     th {
-      background-color: #333;
+      background-color: #2a2a2a;
+      color: #ffcc00;
     }
 
     tr:nth-child(even) {
-      background-color: #2a2a2a;
+      background-color: #262626;
     }
 
     tr:hover {
       background-color: #333;
+    }
+
+    footer {
+      text-align: center;
+      font-size: 13px;
+      color: #999;
+      margin-top: 40px;
+      padding: 20px 0;
+      background: #1a1a1a;
     }
   </style>
 </head>
@@ -67,7 +85,7 @@
         </tr>
       </thead>
       <tbody id="leaderboard-body">
-        <tr><td colspan="3">Loading...</td></tr>
+        <tr><td colspan="3">Loading leaderboard...</td></tr>
       </tbody>
     </table>
   </main>
@@ -79,7 +97,7 @@
   <script type="module" src="/js/header.js"></script>
   <script>
     const db = firebase.firestore();
-    const body = document.getElementById("leaderboard-body");
+    const tbody = document.getElementById("leaderboard-body");
 
     const startOfMonth = new Date();
     startOfMonth.setDate(1);
@@ -89,37 +107,43 @@
       .where("timestamp", ">", firebase.firestore.Timestamp.fromDate(startOfMonth))
       .get()
       .then(snapshot => {
-        const counts = {};
-        snapshot.docs.forEach(doc => {
-          const uid = doc.data().userId;
-          counts[uid] = (counts[uid] || 0) + 1;
+        const countMap = {};
+        snapshot.forEach(doc => {
+          const userId = doc.data().userId;
+          countMap[userId] = (countMap[userId] || 0) + 1;
         });
 
-        const sorted = Object.entries(counts)
+        const sorted = Object.entries(countMap)
           .sort((a, b) => b[1] - a[1])
           .slice(0, 25);
 
         if (sorted.length === 0) {
-          body.innerHTML = `<tr><td colspan="3">No reposts yet this month.</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="3">No reposts recorded yet this month.</td></tr>`;
           return;
         }
 
-        body.innerHTML = "";
-        sorted.forEach(([uid, count], i) => {
-          db.collection("users").doc(uid).get().then(userDoc => {
-            const user = userDoc.data() || {};
-            const display = user.displayName || "Anonymous";
+        tbody.innerHTML = "";
+        sorted.forEach(([userId, count], index) => {
+          db.collection("users").doc(userId).get().then(userDoc => {
+            const userData = userDoc.data() || {};
+            const displayName = userData.displayName || "Anonymous";
+
             const row = `
               <tr>
-                <td>${i + 1}</td>
-                <td>${display}</td>
+                <td>${index + 1}</td>
+                <td>${displayName}</td>
                 <td>${count}</td>
               </tr>
             `;
-            body.insertAdjacentHTML("beforeend", row);
+            tbody.insertAdjacentHTML("beforeend", row);
           });
         });
+      })
+      .catch(error => {
+        console.error("Error loading leaderboard:", error);
+        tbody.innerHTML = `<tr><td colspan="3">❌ Error loading leaderboard.</td></tr>`;
       });
   </script>
 </body>
 </html>
+
