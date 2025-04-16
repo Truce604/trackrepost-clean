@@ -1,38 +1,39 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "api/**/*.js",
-      "use": "@vercel/node"
-    }
-  ],
-  "functions": {
-    "api/**/*.js": {
-      "runtime": "nodejs18.x"
-    }
-  },
-  "rewrites": [
-    {
-      "source": "/campaigns",
-      "destination": "/campaigns.html"
+    "version": 2,
+    "builds": [
+      {
+        "src": "api/**/*.js",
+        "use": "@vercel/node"
+      }
+    ],
+    "functions": {
+      "api/**/*.js": {
+        "runtime": "nodejs18.x"
+      }
     },
-    {
-      "source": "/credits",
-      "destination": "/credits.html"
-    },
-    {
-      "source": "/payment-success",
-      "destination": "/payment-success.html"
-    },
-    {
-      "source": "/dashboard",
-      "destination": "/dashboard.html"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/$1"
-    }
-  ]
-}
+    "rewrites": [
+      {
+        "source": "/campaigns",
+        "destination": "/campaigns.html"
+      },
+      {
+        "source": "/credits",
+        "destination": "/credits.html"
+      },
+      {
+        "source": "/payment-success",
+        "destination": "/payment-success.html"
+      },
+      {
+        "source": "/dashboard",
+        "destination": "/dashboard.html"
+      }
+    ],
+    "routes": [
+      {
+        "src": "/api/(.*)",
+        "dest": "/api/$1"
+      }
+    ]
+  }
+  
