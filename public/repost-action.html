@@ -3,126 +3,53 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Repost Track - TrackRepost</title>
+  <title>Confirm Repost | TrackRepost</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="icon" href="/images/favicon.ico" type="image/x-icon" />
+  <meta name="description" content="Repost and earn credits by supporting tracks on TrackRepost." />
 
-  <!-- ✅ Styles -->
-  <link rel="stylesheet" href="styles.css" />
-
-  <!-- ✅ Firebase Compat SDKs -->
+  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
-  <!-- ✅ Configs -->
-  <script src="/js/firebaseConfig.js"></script>
-  <script src="/js/firebase-init.js"></script>
-
-  <!-- ✅ SoundCloud SDK -->
-  <script src="https://w.soundcloud.com/player/api.js"></script>
-
-  <!-- ✅ Repost Logic -->
+  <!-- Config + Script -->
+  <script src="/js/firebaseConfig.js" defer></script>
+  <script src="/js/firebase-init.js" defer></script>
+  <script src="/js/header.js" defer></script>
   <script src="/js/repost-action.js" defer></script>
-
-  <!-- ✅ Site Header -->
-  <script type="module" src="/js/header.js"></script>
-
-  <style>
-    body {
-      background-color: #0d0d0d;
-      color: #fff;
-      font-family: Arial, sans-serif;
-      padding: 30px;
-      max-width: 700px;
-      margin: 0 auto;
-    }
-
-    h1 {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-
-    .card {
-      background: #1e1e1e;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.3);
-    }
-
-    .card img {
-      width: 100%;
-      border-radius: 12px;
-      margin-bottom: 15px;
-    }
-
-    .card h2 {
-      margin: 0 0 10px;
-    }
-
-    .card p {
-      margin: 5px 0;
-      color: #ccc;
-    }
-
-    iframe {
-      margin-top: 15px;
-      border-radius: 8px;
-    }
-
-    form label {
-      display: block;
-      margin: 10px 0 5px;
-    }
-
-    textarea {
-      width: 100%;
-      border-radius: 8px;
-      border: 1px solid #333;
-      background: #121212;
-      color: #fff;
-      padding: 10px;
-      resize: vertical;
-      min-height: 60px;
-    }
-
-    .confirm-button {
-      margin-top: 15px;
-      padding: 12px 20px;
-      background: #ffa500;
-      color: #000;
-      border: none;
-      border-radius: 8px;
-      font-weight: bold;
-      cursor: pointer;
-      width: 100%;
-    }
-
-    .confirm-button:disabled {
-      background: #444;
-      color: #aaa;
-      cursor: not-allowed;
-    }
-
-    #reward-estimate {
-      text-align: center;
-      font-size: 0.95rem;
-      color: #aaa;
-      margin-top: 10px;
-    }
-
-    #repost-container p {
-      text-align: center;
-      margin-top: 50px;
-      font-size: 1.1rem;
-      color: #bbb;
-    }
-  </style>
 </head>
 <body>
-  <div id="site-header"></div>
+  <header id="site-header"></header>
 
-  <h1>🎧 Repost This Track</h1>
-  <div id="repost-container">
-    <p>Loading campaign...</p>
-  </div>
+  <main class="container">
+    <h1>🔥 Repost This Track</h1>
+    <div id="campaignDetails" class="campaign-card">
+      <p>Loading track info...</p>
+    </div>
+
+    <div id="actionForm" style="display:none;">
+      <form id="repostForm">
+        <label>
+          <input type="checkbox" id="likeCheckbox" checked />
+          💛 Like this track (earn +1 credit)
+        </label>
+
+        <label>
+          <input type="checkbox" id="followCheckbox" checked />
+          🎧 Follow the artist (earn +2 credits)
+        </label>
+
+        <label for="commentBox">💬 Optional Comment (earn +2 credits)</label>
+        <textarea id="commentBox" rows="3" placeholder="Say something nice..."></textarea>
+
+        <button type="submit" class="button">✅ Confirm Repost & Earn Credits</button>
+      </form>
+    </div>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 TrackRepost — Boost your music reach.</p>
+  </footer>
 </body>
 </html>
