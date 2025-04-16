@@ -8,6 +8,10 @@
   ],
   "rewrites": [
     {
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
+    },
+    {
       "source": "/campaigns",
       "destination": "/campaigns.html"
     },
@@ -22,12 +26,6 @@
     {
       "source": "/dashboard",
       "destination": "/dashboard.html"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/$1"
     }
   ]
 }
