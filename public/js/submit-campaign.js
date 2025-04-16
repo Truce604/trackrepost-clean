@@ -4,52 +4,56 @@ firebase.auth().onAuthStateChanged(async (user) => {
     return;
   }
 
-  document.getElementById("creditBalance").textContent = "Loading...";
+  const creditDisplay = document.getElementById("creditBalance");
+  const form = document.getElementById("campaignForm");
 
   const userRef = firebase.firestore().collection("users").doc(user.uid);
-  const userDoc = await userRef.get();
-  const userData = userDoc.data();
+  const userSnap = await userRef.get();
+  const userData = userSnap.data();
 
-  document.getElementById("creditBalance").textContent = `${userData.credits} credits`;
-
-  const form = document.getElementById("campaignForm");
+  creditDisplay.textContent = `${userData.credits} credits`;
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const trackUrl = document.getElementById("trackUrl").value;
-    const genre = document.getElementById("genre").value;
+    const trackUrl = document.getElementById("trackUrl").value.trim();
+    const genre = document.getElementById("genre").value.trim();
     const credits = parseInt(document.getElementById("credits").value);
+
+    if (!trackUrl || !genre || isNaN(credits)) {
+      alert("Please fill in all fields.");
+      return;
+    }
 
     if (userData.credits < credits) {
       alert("Not enough credits.");
       return;
     }
 
-    const title = "Blaster by Lowsealoc Records";
-    const artworkUrl = "https://i1.sndcdn.com/artworks-bu0M9Og5ViAZIQmP-O1G0Zw-t500x500.jpg";
-    const artist = "skrapbeats";
-
     const campaignId = `${user.uid}_${Date.now()}`;
 
+    // Placeholder metadata until we pull real info from SoundCloud
+    const title = "Untitled Track";
+    const artworkUrl = "/images/default-art.png";
+    const artist = userData.displayName || "Unknown Artist";
+
     await firebase.firestore().collection("campaigns").doc(campaignId).set({
+      userId: user.uid,
       trackUrl,
       genre,
       credits,
       title,
       artworkUrl,
       artist,
-      userId: user.uid,
       active: true,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp() // ✅ Correct type
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
 
-    // Deduct user credits
     await userRef.update({
       credits: firebase.firestore.FieldValue.increment(-credits)
     });
 
-    alert("Campaign submitted!");
+    alert("✅ Campaign submitted!");
     window.location.href = "dashboard.html";
   });
 });
