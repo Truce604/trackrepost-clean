@@ -6,11 +6,11 @@ firebase.auth().onAuthStateChanged(async (user) => {
 
   const creditDisplay = document.getElementById("creditBalance");
   const form = document.getElementById("campaignForm");
+
   const userRef = firebase.firestore().collection("users").doc(user.uid);
   const userSnap = await userRef.get();
   const userData = userSnap.data();
 
-  // ✅ Display user credits
   creditDisplay.textContent = userData.credits;
 
   form.addEventListener("submit", async (e) => {
@@ -30,12 +30,23 @@ firebase.auth().onAuthStateChanged(async (user) => {
       return;
     }
 
-    const campaignId = `${user.uid}_${Date.now()}`;
+    // 🧠 Fetch metadata from SoundCloud oEmbed
+    let title = "Untitled Track";
+    let artworkUrl = "/images/default-art.png";
 
-    // Temporary placeholders for now — later we'll pull real SoundCloud meta
-    const title = "Untitled Track";
-    const artworkUrl = "/images/default-art.png";
+    try {
+      const oEmbedUrl = `https://soundcloud.com/oembed?format=json&url=${encodeURIComponent(trackUrl)}`;
+      const response = await fetch(oEmbedUrl);
+      const data = await response.json();
+
+      if (data.title) title = data.title;
+      if (data.thumbnail_url) artworkUrl = data.thumbnail_url;
+    } catch (err) {
+      console.warn("Could not fetch SoundCloud metadata:", err);
+    }
+
     const artist = userData.displayName || "Unknown Artist";
+    const campaignId = `${user.uid}_${Date.now()}`;
 
     await firebase.firestore().collection("campaigns").doc(campaignId).set({
       userId: user.uid,
@@ -49,7 +60,6 @@ firebase.auth().onAuthStateChanged(async (user) => {
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
 
-    // ✅ Deduct user credits
     await userRef.update({
       credits: firebase.firestore.FieldValue.increment(-credits)
     });
@@ -58,4 +68,3 @@ firebase.auth().onAuthStateChanged(async (user) => {
     window.location.href = "dashboard.html";
   });
 });
-
