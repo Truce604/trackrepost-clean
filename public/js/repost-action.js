@@ -1,129 +1,115 @@
-// ✅ Initialize Firebase (already loaded in HTML via compat SDK)
-const db = firebase.firestore();
-const auth = firebase.auth();
-
-const params = new URLSearchParams(window.location.search);
-const campaignId = params.get("id");
-const container = document.getElementById("repost-container");
-
-let currentUser = null;
-let campaignData = null;
-let scWidget = null;
-
-auth.onAuthStateChanged(async (user) => {
+firebase.auth().onAuthStateChanged(async (user) => {
   if (!user) {
-    container.innerHTML = `<p>🔒 Please log in to boost this track.</p>`;
+    window.location.href = "index.html";
     return;
   }
 
-  currentUser = user;
+  const params = new URLSearchParams(window.location.search);
+  const campaignId = params.get("campaignId");
 
-  // ✅ Prevent reposting same campaign
-  const repostDoc = await db.collection("reposts").doc(`${user.uid}_${campaignId}`).get();
-  if (repostDoc.exists) {
-    container.innerHTML = `<p>✅ You've already reposted this track.</p>`;
-    return;
-  }
+  const campaignRef = firebase.firestore().collection("campaigns").doc(campaignId);
+  const repostRef = firebase.firestore().collection("reposts").doc(`${user.uid}_${campaignId}`);
+
+  const campaignContainer = document.getElementById("campaignDetails");
+  const actionForm = document.getElementById("actionForm");
 
   try {
-    const campaignSnap = await db.collection("campaigns").doc(campaignId).get();
-    if (!campaignSnap.exists) {
-      container.innerHTML = `<p>❌ Campaign not found or removed.</p>`;
+    // Check if user already reposted this campaign
+    const repostDoc = await repostRef.get();
+    if (repostDoc.exists) {
+      campaignContainer.innerHTML = "<p>⚠️ You've already reposted this campaign.</p>";
       return;
     }
 
-    campaignData = campaignSnap.data();
+    // Load campaign details
+    const doc = await campaignRef.get();
+    if (!doc.exists) {
+      campaignContainer.innerHTML = "<p>Campaign not found.</p>";
+      return;
+    }
 
-    container.innerHTML = `
-      <div class="card">
-        <img src="${campaignData.artworkUrl}" alt="Artwork" />
-        <h2>${campaignData.title}</h2>
-        <p>👤 ${campaignData.artist}</p>
-        <p>🎧 ${campaignData.genre} | 💳 ${campaignData.credits} credits</p>
+    const data = doc.data();
 
-        <iframe id="sc-player" width="100%" height="140" scrolling="no" frameborder="no"
-          src="https://w.soundcloud.com/player/?url=${encodeURIComponent(campaignData.trackUrl)}&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&visual=false">
-        </iframe>
-
-        <form id="engagement-form">
-          <label><input type="checkbox" id="like" checked /> 💖 Like this track (+1 credit)</label><br/>
-          <label><input type="checkbox" id="follow" checked /> 👣 Follow the artist (+2 credits)</label><br/>
-          <label><input type="checkbox" id="comment" /> 💬 Leave a comment (+2 credits)</label><br/>
-          <textarea id="commentText" placeholder="Write a comment..." style="display:none;"></textarea>
-        </form>
-
-        <p id="reward-estimate">Estimated reward: -- credits</p>
-        <button id="repost-btn" class="confirm-button" disabled>▶️ Play track to enable repost</button>
+    // Display campaign info
+    campaignContainer.innerHTML = `
+      <img src="${data.artworkUrl}" class="artwork" />
+      <div class="campaign-info">
+        <h3>${data.title}</h3>
+        <p><strong>Artist:</strong> ${data.artist}</p>
+        <p><strong>Genre:</strong> ${data.genre}</p>
+        <p><strong>Track:</strong> <a href="${data.trackUrl}" target="_blank">${data.trackUrl}</a></p>
+        <p><strong>Available Credits:</strong> ${data.credits}</p>
       </div>
     `;
 
-    const iframe = document.getElementById("sc-player");
-    scWidget = SC.Widget(iframe);
-    scWidget.bind(SC.Widget.Events.PLAY, () => {
-      const btn = document.getElementById("repost-btn");
-      btn.disabled = false;
-      btn.textContent = "✅ Boost & Earn";
-      btn.onclick = confirmRepost;
+    actionForm.style.display = "block";
+
+    // Handle repost form
+    const form = document.getElementById("repostForm");
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const like = document.getElementById("likeCheckbox").checked;
+      const follow = document.getElementById("followCheckbox").checked;
+      const comment = document.getElementById("commentBox").value.trim();
+
+      let earned = 1; // base for repost
+      if (like) earned += 1;
+      if (follow) earned += 2;
+      if (comment.length > 0) earned += 2;
+
+      // Prevent repost if campaign doesn't have enough credits
+      if (data.credits < earned) {
+        alert("🚫 Campaign doesn't have enough credits to reward you right now.");
+        return;
+      }
+
+      // Write repost log
+      await repostRef.set({
+        userId: user.uid,
+        campaignId,
+        trackUrl: data.trackUrl,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        like,
+        follow,
+        comment
+      });
+
+      // Update credits
+      const userRef = firebase.firestore().collection("users").doc(user.uid);
+      const ownerRef = firebase.firestore().collection("users").doc(data.userId);
+
+      const batch = firebase.firestore().batch();
+      batch.update(userRef, {
+        credits: firebase.firestore.FieldValue.increment(earned)
+      });
+      batch.update(ownerRef, {
+        credits: firebase.firestore.FieldValue.increment(-earned)
+      });
+      batch.update(campaignRef, {
+        credits: firebase.firestore.FieldValue.increment(-earned)
+      });
+
+      // Add transaction logs
+      const txRef = firebase.firestore().collection("transactions").doc();
+      batch.set(txRef, {
+        userId: user.uid,
+        type: "earn",
+        credits: earned,
+        campaignId,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      batch.commit().then(() => {
+        alert(`✅ Repost confirmed! You earned ${earned} credits.`);
+        window.location.href = "explore.html";
+      });
     });
 
-    document.getElementById("comment").addEventListener("change", () => {
-      document.getElementById("commentText").style.display = document.getElementById("comment").checked ? "block" : "none";
-      updateEstimatedReward();
-    });
-
-    document.getElementById("commentText").addEventListener("input", updateEstimatedReward);
-    document.getElementById("like").addEventListener("change", updateEstimatedReward);
-    document.getElementById("follow").addEventListener("change", updateEstimatedReward);
-
-  } catch (err) {
-    console.error("❌ Error loading campaign:", err);
-    container.innerHTML = `<p>❌ Error loading campaign info.</p>`;
+  } catch (error) {
+    console.error("❌ Error loading campaign:", error);
+    campaignContainer.innerHTML = "<p>Error loading campaign.</p>";
   }
 });
 
-async function updateEstimatedReward() {
-  const userSnap = await db.collection("users").doc(currentUser.uid).get();
-  const followers = userSnap.data().soundcloud?.followers || 0;
-  let total = Math.floor(followers / 100);
-
-  if (document.getElementById("like").checked) total += 1;
-  if (document.getElementById("follow").checked) total += 2;
-  if (document.getElementById("comment").checked && document.getElementById("commentText").value.trim()) total += 2;
-
-  document.getElementById("reward-estimate").textContent = `Estimated reward: ${total} credits`;
-}
-
-async function confirmRepost() {
-  const liked = document.getElementById("like").checked;
-  const followed = document.getElementById("follow").checked;
-  const commented = document.getElementById("comment").checked;
-  const commentText = document.getElementById("commentText").value.trim();
-
-  try {
-    const res = await fetch("https://us-central1-trackrepost-921f8.cloudfunctions.net/repostAndReward", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        userId: currentUser.uid,
-        campaignId,
-        liked,
-        followed,
-        commented,
-        commentText
-      })
-    });
-
-    if (res.ok) {
-      const data = await res.json();
-      alert(`✅ Boost complete! You earned ${data.earnedCredits} credits.`);
-      window.location.href = "dashboard.html";
-    } else {
-      const error = await res.text();
-      alert(`❌ Boost failed: ${error}`);
-    }
-  } catch (err) {
-    console.error("🔥 Boost error:", err);
-    alert("❌ Something went wrong during your boost.");
-  }
-}
 
