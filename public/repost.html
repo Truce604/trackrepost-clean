@@ -5,18 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>🔥 Repost & Earn Credits - TrackRepost</title>
   <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" href="/images/favicon.ico" type="image/x-icon" />
 
-  <!-- ✅ Firebase Compat SDKs -->
+  <!-- ✅ Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
-  <!-- ✅ Firebase Config & Init -->
+  <!-- ✅ Config & Init -->
   <script src="/js/firebaseConfig.js"></script>
   <script src="/js/firebase-init.js"></script>
 
   <!-- ✅ Site Header -->
-  <script type="module" src="/js/header.js"></script>
+  <script src="/js/header.js" defer></script>
 
   <style>
     body {
@@ -36,7 +37,7 @@
       margin-bottom: 30px;
       padding: 20px;
       border-radius: 12px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
     }
 
     .campaign h3 {
@@ -86,7 +87,6 @@
   </footer>
 
   <script>
-    const db = firebase.firestore();
     const auth = firebase.auth();
     const campaignList = document.getElementById("campaignList");
 
@@ -97,12 +97,14 @@
       }
 
       try {
-        const repostSnap = await db.collection("reposts")
+        const repostSnap = await firebase.firestore().collection("reposts")
           .where("userId", "==", user.uid)
           .get();
+
         const repostedIds = repostSnap.docs.map(doc => doc.data().campaignId);
 
-        const snap = await db.collection("campaigns")
+        const snap = await firebase.firestore().collection("campaigns")
+          .where("active", "==", true)
           .orderBy("createdAt", "desc")
           .get();
 
@@ -126,7 +128,7 @@
             <p><strong>Credits Available:</strong> ${c.credits}</p>
             <iframe scrolling="no" frameborder="no" allow="autoplay"
               src="https://w.soundcloud.com/player/?url=${encodeURIComponent(c.trackUrl)}&color=%23ff5500&auto_play=false&show_user=true"></iframe>
-            <button class="repost-btn" onclick="location.href='repost-action.html?id=${id}'">
+            <button class="repost-btn" onclick="location.href='repost-action.html?campaignId=${id}'">
               ✅ Repost This Track
             </button>
           `;
