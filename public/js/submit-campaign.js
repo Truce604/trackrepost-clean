@@ -6,12 +6,12 @@ firebase.auth().onAuthStateChanged(async (user) => {
 
   const creditDisplay = document.getElementById("creditBalance");
   const form = document.getElementById("campaignForm");
-
   const userRef = firebase.firestore().collection("users").doc(user.uid);
   const userSnap = await userRef.get();
   const userData = userSnap.data();
 
-  creditDisplay.textContent = `${userData.credits} credits`;
+  // ✅ Display user credits
+  creditDisplay.textContent = userData.credits;
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -26,13 +26,13 @@ firebase.auth().onAuthStateChanged(async (user) => {
     }
 
     if (userData.credits < credits) {
-      alert("Not enough credits.");
+      alert(`Not enough credits. You only have ${userData.credits} credits.`);
       return;
     }
 
     const campaignId = `${user.uid}_${Date.now()}`;
 
-    // Placeholder metadata until we pull real info from SoundCloud
+    // Temporary placeholders for now — later we'll pull real SoundCloud meta
     const title = "Untitled Track";
     const artworkUrl = "/images/default-art.png";
     const artist = userData.displayName || "Unknown Artist";
@@ -49,6 +49,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
 
+    // ✅ Deduct user credits
     await userRef.update({
       credits: firebase.firestore.FieldValue.increment(-credits)
     });
@@ -57,3 +58,4 @@ firebase.auth().onAuthStateChanged(async (user) => {
     window.location.href = "dashboard.html";
   });
 });
+
