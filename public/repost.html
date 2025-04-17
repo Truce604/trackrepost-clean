@@ -6,70 +6,73 @@
   <title>🔥 Repost & Earn Credits - TrackRepost</title>
   <link rel="stylesheet" href="styles.css" />
 
-  <!-- ✅ Firebase SDKs -->
+  <!-- ✅ Firebase Compat SDKs -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
-  <!-- ✅ Firebase Config -->
+  <!-- ✅ Firebase Config + Init -->
   <script src="/js/firebaseConfig.js"></script>
-  <script src="/js/firebase-init.js"></script>
+  <script>
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+  </script>
 
   <!-- ✅ Header -->
   <script type="module" src="/js/header.js"></script>
 
   <style>
     body {
-      background: #111;
+      background-color: #111;
       color: #eee;
-      font-family: 'Segoe UI', sans-serif;
+      font-family: sans-serif;
+      margin: 0;
+      padding: 0;
     }
 
-    .container {
-      max-width: 1000px;
+    main.container {
+      max-width: 800px;
       margin: 40px auto;
       padding: 20px;
     }
 
     .campaign {
-      background: #1c1c1c;
-      margin-bottom: 30px;
-      padding: 20px;
-      border-radius: 14px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      background-color: #1c1c1c;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 6px rgba(0, 0, 0, 0.5);
     }
 
     .campaign h3 {
-      margin-bottom: 8px;
-      font-size: 20px;
+      margin: 0 0 6px;
     }
 
     .campaign p {
-      margin: 6px 0;
-      font-size: 14px;
-      color: #ccc;
+      margin: 4px 0;
     }
 
     .campaign iframe {
       width: 100%;
       height: 166px;
-      margin-top: 12px;
       border-radius: 10px;
+      margin-top: 10px;
     }
 
     .repost-btn {
-      margin-top: 14px;
-      padding: 10px 20px;
-      font-weight: bold;
-      background-color: #ffaa00;
-      color: #000;
+      margin-top: 10px;
+      background: #ffa600;
       border: none;
-      border-radius: 10px;
+      padding: 10px 20px;
+      color: black;
+      font-weight: bold;
+      border-radius: 8px;
       cursor: pointer;
     }
 
     .repost-btn:hover {
-      background-color: #ffcc00;
+      background: #ff8800;
     }
   </style>
 </head>
@@ -78,49 +81,42 @@
 
   <main class="container">
     <h1>🔥 Repost & Earn Credits</h1>
-    <div id="campaignList"><p>Loading campaigns...</p></div>
+    <div id="campaignList">
+      <p>Loading campaigns...</p>
+    </div>
   </main>
 
-  <footer>
-    <p style="text-align:center; color:#777;">© 2025 TrackRepost. All rights reserved.</p>
-  </footer>
-
   <script>
-    const auth = firebase.auth();
-    const db = firebase.firestore();
     const campaignList = document.getElementById("campaignList");
 
     auth.onAuthStateChanged(async (user) => {
       if (!user) {
-        campaignList.innerHTML = "<p>Please sign in to view campaigns.</p>";
+        campaignList.innerHTML = "<p>Please sign in to view repost campaigns.</p>";
         return;
       }
 
       try {
-        // Get list of campaigns already reposted by this user
         const repostSnap = await db.collection("reposts")
-          .where("userId", "==", user.uid)
-          .get();
+          .where("userId", "==", user.uid).get();
+
         const repostedIds = repostSnap.docs.map(doc => doc.data().campaignId);
 
-        // Query active campaigns only
         const snap = await db.collection("campaigns")
           .where("active", "==", true)
           .orderBy("createdAt", "desc")
           .get();
 
         if (snap.empty) {
-          campaignList.innerHTML = "<p>No campaigns found.</p>";
+          campaignList.innerHTML = "<p>No campaigns available right now.</p>";
           return;
         }
 
         campaignList.innerHTML = "";
+
         snap.forEach(doc => {
-          if (repostedIds.includes(doc.id)) return; // skip already reposted
+          if (repostedIds.includes(doc.id)) return;
 
           const c = doc.data();
-          const id = doc.id;
-
           const el = document.createElement("div");
           el.className = "campaign";
           el.innerHTML = `
@@ -128,8 +124,9 @@
             <p><strong>Genre:</strong> ${c.genre}</p>
             <p><strong>Credits Available:</strong> ${c.credits}</p>
             <iframe scrolling="no" frameborder="no" allow="autoplay"
-              src="https://w.soundcloud.com/player/?url=${encodeURIComponent(c.trackUrl)}&color=%23ff5500&auto_play=false&show_user=true"></iframe>
-            <button class="repost-btn" onclick="location.href='repost-action.html?id=${id}'">
+              src="https://w.soundcloud.com/player/?url=${encodeURIComponent(c.trackUrl)}&color=%23ff5500&auto_play=false&show_user=true">
+            </iframe>
+            <button class="repost-btn" onclick="location.href='repost-action.html?id=${doc.id}'">
               ✅ Repost This Track
             </button>
           `;
@@ -142,11 +139,10 @@
 
       } catch (err) {
         console.error("Error loading campaigns:", err);
-        campaignList.innerHTML = "<p>❌ Error loading campaigns.</p>";
+        campaignList.innerHTML = "<p>❌ Failed to load campaigns.</p>";
       }
     });
   </script>
 </body>
 </html>
-
 
