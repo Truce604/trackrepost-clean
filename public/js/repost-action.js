@@ -1,99 +1,98 @@
-// public/js/repost-action.js
+// ✅ repost-action.js - TrackRepost Launch Version
 
 firebase.auth().onAuthStateChanged(async (user) => {
   if (!user) {
-    alert("Please log in to continue.");
+    alert("Please log in to repost.");
     window.location.href = "/index.html";
     return;
   }
 
-  const urlParams = new URLSearchParams(window.location.search);
-  const campaignId = urlParams.get("id");
-
+  const params = new URLSearchParams(window.location.search);
+  const campaignId = params.get("id");
   if (!campaignId) {
-    document.body.innerHTML = "<p>❌ No campaign ID provided.</p>";
+    document.body.innerHTML = "<p>❌ No campaign ID found in URL.</p>";
     return;
   }
 
   const db = firebase.firestore();
-  const container = document.querySelector(".container");
+  const campaignRef = db.collection("campaigns").doc(campaignId);
+  const repostId = `${user.uid}_${campaignId}`;
+  const repostRef = db.collection("reposts").doc(repostId);
+  const userRef = db.collection("users").doc(user.uid);
 
   try {
-    const doc = await db.collection("campaigns").doc(campaignId).get();
-    if (!doc.exists) {
-      container.innerHTML = "<p>❌ Campaign not found.</p>";
+    const [campaignSnap, repostSnap] = await Promise.all([
+      campaignRef.get(),
+      repostRef.get()
+    ]);
+
+    if (!campaignSnap.exists) {
+      document.body.innerHTML = "<p>❌ Campaign not found.</p>";
       return;
     }
 
-    const data = doc.data();
+    if (repostSnap.exists) {
+      document.body.innerHTML = "<p>✅ You already reposted this track.</p>";
+      return;
+    }
 
-    container.innerHTML = `
-      <h1>${data.title || "Untitled Track"}</h1>
-      <p><strong>Artist:</strong> ${data.artist}</p>
-      <p><strong>Genre:</strong> ${data.genre}</p>
-      <iframe
-        scrolling="no"
-        frameborder="no"
-        allow="autoplay"
-        src="https://w.soundcloud.com/player/?url=${encodeURIComponent(
-          data.trackUrl
-        )}&color=%23ff5500&auto_play=false&show_user=true"
-      ></iframe>
+    const campaign = campaignSnap.data();
 
-      <label>
-        <input type="checkbox" id="likeCheckbox" checked />
-        ❤️ Like this track (earn +1 credit)
-      </label>
-      <br />
-      <label>
-        💬 Leave a comment for +2 credits:
-        <input type="text" id="commentInput" placeholder="Great track!" />
-      </label>
-      <br />
-      <button id="repostBtn">✅ Confirm Repost</button>
-    `;
+    const limitTime = new Date(Date.now() - 12 * 60 * 60 * 1000); // 12 hrs ago
+    const repostsQuery = await db.collection("reposts")
+      .where("userId", "==", user.uid)
+      .where("timestamp", ">", limitTime)
+      .get();
 
-    document
-      .getElementById("repostBtn")
-      .addEventListener("click", async () => {
-        const likeChecked = document.getElementById("likeCheckbox").checked;
-        const commentText = document.getElementById("commentInput").value;
+    if (repostsQuery.size >= 10) {
+      document.body.innerHTML = "<p>⏳ You’ve reached your 12-hour repost limit.</p>";
+      return;
+    }
 
-        let earnedCredits = Math.floor(
-          (user.followers || 0) / 100
-        ); // fallback: 0
-        if (likeChecked) earnedCredits += 1;
-        if (commentText.trim()) earnedCredits += 2;
+    // 🎵 Inject UI
+    document.getElementById("trackTitle").textContent = campaign.title || "Untitled";
+    document.getElementById("artistName").textContent = campaign.artist || "Unknown Artist";
+    document.getElementById("genre").textContent = campaign.genre || "Unknown";
+    document.getElementById("creditsAvailable").textContent = campaign.credits || 0;
+    document.getElementById("soundcloudPlayer").src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(campaign.trackUrl)}&color=%23ff5500&auto_play=false&show_user=true`;
 
-        try {
-          await db.collection("reposts").doc(`${user.uid}_${campaignId}`).set({
-            userId: user.uid,
-            campaignId,
-            trackUrl: data.trackUrl,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-            prompted: false,
-            liked: likeChecked,
-            comment: commentText,
-          });
+    document.getElementById("confirmBtn").addEventListener("click", async () => {
+      const likeChecked = document.getElementById("likeCheckbox").checked;
+      const comment = document.getElementById("commentBox").value.trim();
+      const creditsEarned = 1 + (likeChecked ? 1 : 0) + (comment ? 2 : 0);
 
-          await db.collection("users").doc(user.uid).update({
-            credits: firebase.firestore.FieldValue.increment(earnedCredits),
-          });
+      if (campaign.credits < creditsEarned) {
+        alert("❌ Not enough credits remaining in this campaign.");
+        return;
+      }
 
-          await db.collection("users").doc(data.userId).update({
-            credits: firebase.firestore.FieldValue.increment(-earnedCredits),
-          });
+      const batch = db.batch();
 
-          alert(`✅ Repost complete! You earned ${earnedCredits} credits.`);
-          window.location.href = "/dashboard.html";
-        } catch (err) {
-          console.error("🔥 Repost failed:", err);
-          alert("Something went wrong. Try again.");
-        }
+      batch.set(repostRef, {
+        userId: user.uid,
+        campaignId,
+        trackUrl: campaign.trackUrl,
+        prompted: false,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
       });
+
+      batch.update(userRef, {
+        credits: firebase.firestore.FieldValue.increment(creditsEarned)
+      });
+
+      batch.update(campaignRef, {
+        credits: firebase.firestore.FieldValue.increment(-creditsEarned)
+      });
+
+      await batch.commit();
+
+      alert(`✅ Reposted! You earned ${creditsEarned} credits.`);
+      window.location.href = "/repost.html";
+    });
+
   } catch (err) {
-    console.error("❌ Error loading campaign:", err);
-    container.innerHTML = "<p>❌ Error loading campaign. Check console.</p>";
+    console.error("❌ Repost Error:", err);
+    document.body.innerHTML = "<p>❌ Failed to load campaign. Please try again.</p>";
   }
 });
 
