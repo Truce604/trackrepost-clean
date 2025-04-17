@@ -1,115 +1,101 @@
+// public/js/repost-action.js
+
 firebase.auth().onAuthStateChanged(async (user) => {
   if (!user) {
-    window.location.href = "index.html";
+    alert("Please log in to continue.");
+    window.location.href = "/index.html";
     return;
   }
 
-  const params = new URLSearchParams(window.location.search);
-  const campaignId = params.get("campaignId");
+  const urlParams = new URLSearchParams(window.location.search);
+  const campaignId = urlParams.get("id");
 
-  const campaignRef = firebase.firestore().collection("campaigns").doc(campaignId);
-  const repostRef = firebase.firestore().collection("reposts").doc(`${user.uid}_${campaignId}`);
+  if (!campaignId) {
+    document.body.innerHTML = "<p>❌ No campaign ID provided.</p>";
+    return;
+  }
 
-  const campaignContainer = document.getElementById("campaignDetails");
-  const actionForm = document.getElementById("actionForm");
+  const db = firebase.firestore();
+  const container = document.querySelector(".container");
 
   try {
-    // Check if user already reposted this campaign
-    const repostDoc = await repostRef.get();
-    if (repostDoc.exists) {
-      campaignContainer.innerHTML = "<p>⚠️ You've already reposted this campaign.</p>";
-      return;
-    }
-
-    // Load campaign details
-    const doc = await campaignRef.get();
+    const doc = await db.collection("campaigns").doc(campaignId).get();
     if (!doc.exists) {
-      campaignContainer.innerHTML = "<p>Campaign not found.</p>";
+      container.innerHTML = "<p>❌ Campaign not found.</p>";
       return;
     }
 
     const data = doc.data();
 
-    // Display campaign info
-    campaignContainer.innerHTML = `
-      <img src="${data.artworkUrl}" class="artwork" />
-      <div class="campaign-info">
-        <h3>${data.title}</h3>
-        <p><strong>Artist:</strong> ${data.artist}</p>
-        <p><strong>Genre:</strong> ${data.genre}</p>
-        <p><strong>Track:</strong> <a href="${data.trackUrl}" target="_blank">${data.trackUrl}</a></p>
-        <p><strong>Available Credits:</strong> ${data.credits}</p>
-      </div>
+    container.innerHTML = `
+      <h1>${data.title || "Untitled Track"}</h1>
+      <p><strong>Artist:</strong> ${data.artist}</p>
+      <p><strong>Genre:</strong> ${data.genre}</p>
+      <iframe
+        scrolling="no"
+        frameborder="no"
+        allow="autoplay"
+        src="https://w.soundcloud.com/player/?url=${encodeURIComponent(
+          data.trackUrl
+        )}&color=%23ff5500&auto_play=false&show_user=true"
+      ></iframe>
+
+      <label>
+        <input type="checkbox" id="likeCheckbox" checked />
+        ❤️ Like this track (earn +1 credit)
+      </label>
+      <br />
+      <label>
+        💬 Leave a comment for +2 credits:
+        <input type="text" id="commentInput" placeholder="Great track!" />
+      </label>
+      <br />
+      <button id="repostBtn">✅ Confirm Repost</button>
     `;
 
-    actionForm.style.display = "block";
+    document
+      .getElementById("repostBtn")
+      .addEventListener("click", async () => {
+        const likeChecked = document.getElementById("likeCheckbox").checked;
+        const commentText = document.getElementById("commentInput").value;
 
-    // Handle repost form
-    const form = document.getElementById("repostForm");
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
+        let earnedCredits = Math.floor(
+          (user.followers || 0) / 100
+        ); // fallback: 0
+        if (likeChecked) earnedCredits += 1;
+        if (commentText.trim()) earnedCredits += 2;
 
-      const like = document.getElementById("likeCheckbox").checked;
-      const follow = document.getElementById("followCheckbox").checked;
-      const comment = document.getElementById("commentBox").value.trim();
+        try {
+          await db.collection("reposts").doc(`${user.uid}_${campaignId}`).set({
+            userId: user.uid,
+            campaignId,
+            trackUrl: data.trackUrl,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            prompted: false,
+            liked: likeChecked,
+            comment: commentText,
+          });
 
-      let earned = 1; // base for repost
-      if (like) earned += 1;
-      if (follow) earned += 2;
-      if (comment.length > 0) earned += 2;
+          await db.collection("users").doc(user.uid).update({
+            credits: firebase.firestore.FieldValue.increment(earnedCredits),
+          });
 
-      // Prevent repost if campaign doesn't have enough credits
-      if (data.credits < earned) {
-        alert("🚫 Campaign doesn't have enough credits to reward you right now.");
-        return;
-      }
+          await db.collection("users").doc(data.userId).update({
+            credits: firebase.firestore.FieldValue.increment(-earnedCredits),
+          });
 
-      // Write repost log
-      await repostRef.set({
-        userId: user.uid,
-        campaignId,
-        trackUrl: data.trackUrl,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-        like,
-        follow,
-        comment
+          alert(`✅ Repost complete! You earned ${earnedCredits} credits.`);
+          window.location.href = "/dashboard.html";
+        } catch (err) {
+          console.error("🔥 Repost failed:", err);
+          alert("Something went wrong. Try again.");
+        }
       });
-
-      // Update credits
-      const userRef = firebase.firestore().collection("users").doc(user.uid);
-      const ownerRef = firebase.firestore().collection("users").doc(data.userId);
-
-      const batch = firebase.firestore().batch();
-      batch.update(userRef, {
-        credits: firebase.firestore.FieldValue.increment(earned)
-      });
-      batch.update(ownerRef, {
-        credits: firebase.firestore.FieldValue.increment(-earned)
-      });
-      batch.update(campaignRef, {
-        credits: firebase.firestore.FieldValue.increment(-earned)
-      });
-
-      // Add transaction logs
-      const txRef = firebase.firestore().collection("transactions").doc();
-      batch.set(txRef, {
-        userId: user.uid,
-        type: "earn",
-        credits: earned,
-        campaignId,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-      });
-
-      batch.commit().then(() => {
-        alert(`✅ Repost confirmed! You earned ${earned} credits.`);
-        window.location.href = "explore.html";
-      });
-    });
-
-  } catch (error) {
-    console.error("❌ Error loading campaign:", error);
-    campaignContainer.innerHTML = "<p>Error loading campaign.</p>";
+  } catch (err) {
+    console.error("❌ Error loading campaign:", err);
+    container.innerHTML = "<p>❌ Error loading campaign. Check console.</p>";
   }
 });
+
 
 
