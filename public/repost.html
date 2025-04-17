@@ -6,36 +6,88 @@
   <title>🔥 Repost & Earn Credits - TrackRepost</title>
   <link rel="stylesheet" href="styles.css" />
 
-  <!-- ✅ Firebase Compat SDKs -->
+  <!-- ✅ Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
   <!-- ✅ Firebase Config -->
   <script src="/js/firebaseConfig.js"></script>
+  <script src="/js/firebase-init.js"></script>
+
+  <!-- ✅ Header -->
+  <script type="module" src="/js/header.js"></script>
+
+  <style>
+    body {
+      background: #111;
+      color: #eee;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 40px auto;
+      padding: 20px;
+    }
+
+    .campaign {
+      background: #1c1c1c;
+      margin-bottom: 30px;
+      padding: 20px;
+      border-radius: 14px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    }
+
+    .campaign h3 {
+      margin-bottom: 8px;
+      font-size: 20px;
+    }
+
+    .campaign p {
+      margin: 6px 0;
+      font-size: 14px;
+      color: #ccc;
+    }
+
+    .campaign iframe {
+      width: 100%;
+      height: 166px;
+      margin-top: 12px;
+      border-radius: 10px;
+    }
+
+    .repost-btn {
+      margin-top: 14px;
+      padding: 10px 20px;
+      font-weight: bold;
+      background-color: #ffaa00;
+      color: #000;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    .repost-btn:hover {
+      background-color: #ffcc00;
+    }
+  </style>
 </head>
 <body>
   <div id="site-header"></div>
 
   <main class="container">
     <h1>🔥 Repost & Earn Credits</h1>
-    <div id="campaignList">
-      <p>Loading campaigns...</p>
-    </div>
+    <div id="campaignList"><p>Loading campaigns...</p></div>
   </main>
 
   <footer>
-    <p>© 2025 TrackRepost. All rights reserved.</p>
+    <p style="text-align:center; color:#777;">© 2025 TrackRepost. All rights reserved.</p>
   </footer>
 
   <script>
-    // ✅ Initialize Firebase (prevent duplicate initialization)
-    if (!firebase.apps.length) {
-      firebase.initializeApp(firebaseConfig);
-    }
-
-    const db = firebase.firestore();
     const auth = firebase.auth();
+    const db = firebase.firestore();
     const campaignList = document.getElementById("campaignList");
 
     auth.onAuthStateChanged(async (user) => {
@@ -45,11 +97,13 @@
       }
 
       try {
+        // Get list of campaigns already reposted by this user
         const repostSnap = await db.collection("reposts")
           .where("userId", "==", user.uid)
           .get();
         const repostedIds = repostSnap.docs.map(doc => doc.data().campaignId);
 
+        // Query active campaigns only
         const snap = await db.collection("campaigns")
           .where("active", "==", true)
           .orderBy("createdAt", "desc")
@@ -62,7 +116,7 @@
 
         campaignList.innerHTML = "";
         snap.forEach(doc => {
-          if (repostedIds.includes(doc.id)) return;
+          if (repostedIds.includes(doc.id)) return; // skip already reposted
 
           const c = doc.data();
           const id = doc.id;
@@ -83,7 +137,7 @@
         });
 
         if (!campaignList.hasChildNodes()) {
-          campaignList.innerHTML = "<p>🎉 You’ve reposted all available tracks for now!</p>";
+          campaignList.innerHTML = "<p>🎉 You’ve reposted all available tracks!</p>";
         }
 
       } catch (err) {
@@ -92,9 +146,7 @@
       }
     });
   </script>
-
-  <!-- ✅ Load dynamic header after page content -->
-  <script type="module" src="/js/header.js"></script>
 </body>
 </html>
+
 
