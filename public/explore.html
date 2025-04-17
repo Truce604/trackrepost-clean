@@ -2,37 +2,115 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Explore Campaigns | TrackRepost</title>
-  <link rel="stylesheet" href="/styles.css" />
-  <link rel="icon" href="/images/favicon.ico" type="image/x-icon" />
-  <meta name="description" content="Discover music campaigns to repost and earn credits on TrackRepost." />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🎧 Explore Campaigns | TrackRepost</title>
+  <link rel="stylesheet" href="styles.css" />
 
-  <!-- ✅ Firebase Compat SDKs -->
+  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
-  <!-- ✅ Firebase Config & Init -->
-  <script src="/js/firebaseConfig.js" defer></script>
-  <script src="/js/firebase-init.js" defer></script>
+  <!-- Firebase Config -->
+  <script src="/js/firebaseConfig.js"></script>
+  <script src="/js/firebase-init.js"></script>
 
-  <!-- ✅ Header + Campaign Loader -->
-  <script src="/js/header.js" defer></script>
-  <script src="/js/load-campaigns.js" defer></script>
+  <!-- Header & Explore Logic -->
+  <script type="module" src="/js/header.js"></script>
+  <script src="/js/explore-campaigns.js" defer></script>
+
+  <style>
+    body {
+      background-color: #111;
+      color: #fff;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 40px auto;
+      padding: 20px;
+    }
+
+    .campaign-card {
+      background: #1c1c1c;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 25px;
+      box-shadow: 0 0 10px rgba(255, 153, 0, 0.2);
+    }
+
+    .campaign-card img {
+      width: 90px;
+      height: 90px;
+      object-fit: cover;
+      border-radius: 8px;
+      float: left;
+      margin-right: 20px;
+    }
+
+    .campaign-details {
+      overflow: hidden;
+    }
+
+    .campaign-details h3 {
+      margin: 0 0 5px;
+      font-size: 18px;
+      color: #ff9900;
+    }
+
+    .campaign-details p {
+      margin: 3px 0;
+    }
+
+    .action-bar {
+      margin-top: 12px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .action-bar input[type="text"] {
+      margin-top: 8px;
+      padding: 6px;
+      border-radius: 6px;
+      border: none;
+      width: 100%;
+    }
+
+    .action-bar label {
+      margin-top: 10px;
+    }
+
+    .repost-btn {
+      margin-top: 10px;
+      padding: 10px;
+      background-color: #ff9900;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .repost-btn:hover {
+      background-color: #e88a00;
+    }
+  </style>
 </head>
 <body>
-  <header id="site-header"></header>
+  <div id="site-header"></div>
 
   <main class="container">
-    <h1>🔥 Explore Campaigns</h1>
-    <div id="campaigns" class="campaign-grid">
+    <h1>🔥 Explore Tracks to Repost</h1>
+    <div id="campaignList">
       <p>Loading campaigns...</p>
     </div>
   </main>
 
   <footer>
-    <p>&copy; 2025 TrackRepost.com – All rights reserved.</p>
+    <p style="text-align: center;">© 2025 TrackRepost. All rights reserved.</p>
   </footer>
 </body>
 </html>
+
+
