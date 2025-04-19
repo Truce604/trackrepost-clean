@@ -1,99 +1,49 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Repost This Track - TrackRepost</title>
+  <title>Repost Track - TrackRepost</title>
   <link rel="stylesheet" href="styles.css" />
 
-  <!-- Firebase SDKs -->
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
-  <!-- Firebase Config & Init -->
+  <!-- Config & Init -->
   <script src="/js/firebaseConfig.js"></script>
   <script src="/js/firebase-init.js"></script>
 
-  <!-- Site Header -->
+  <!-- Header -->
   <script type="module" src="/js/header.js"></script>
-
-  <style>
-    body {
-      background: #111;
-      color: #eee;
-      font-family: sans-serif;
-      padding: 20px;
-    }
-
-    .container {
-      max-width: 800px;
-      margin: 0 auto;
-    }
-
-    .track-info {
-      margin-bottom: 20px;
-      background: #1e1e1e;
-      padding: 20px;
-      border-radius: 10px;
-    }
-
-    iframe {
-      width: 100%;
-      height: 166px;
-      border-radius: 8px;
-    }
-
-    label, textarea {
-      display: block;
-      margin-top: 10px;
-    }
-
-    .like-checkbox {
-      margin-top: 10px;
-    }
-
-    button {
-      margin-top: 20px;
-      background: #ff9900;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 8px;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-    }
-
-    button:hover {
-      background: #e88a00;
-    }
-  </style>
 </head>
 <body>
   <div id="site-header"></div>
 
-  <main class="container">
-    <h1>✅ Repost This Track</h1>
-    <div id="trackDetails" class="track-info">
-      <p>Loading track info...</p>
+  <main class="container" style="padding: 20px;">
+    <h1>🎧 Repost Track</h1>
+    <div id="campaignInfo">
+      <p>Loading campaign...</p>
     </div>
 
-    <label class="like-checkbox">
-      <input type="checkbox" id="likeTrack" checked />
-      ❤️ Like this track for +1 credit
-    </label>
-
-    <label>
-      💬 Comment to earn +2 credits:
-      <textarea id="commentBox" rows="3" placeholder="Leave a thoughtful comment..."></textarea>
-    </label>
-
-    <button id="repostButton">🚀 Confirm Repost</button>
-
-    <p id="repostStatus" style="margin-top: 20px;"></p>
+    <div id="engagementOptions" style="margin-top: 20px;">
+      <label><input type="checkbox" id="likeCheckbox" checked /> ❤️ Like (1 credit)</label><br>
+      <label><input type="checkbox" id="followCheckbox" /> ➕ Follow Artist</label><br>
+      <label>
+        💬 Comment for 2 extra credits:<br>
+        <textarea id="commentBox" rows="3" cols="50" placeholder="Nice track! 🔥"></textarea>
+      </label><br><br>
+      <button id="repostBtn">✅ Repost and Earn</button>
+      <p id="repostStatus" style="margin-top: 12px;"></p>
+    </div>
   </main>
+
+  <footer>
+    <p>© 2025 TrackRepost</p>
+  </footer>
 
   <script src="/js/repost-action.js"></script>
 </body>
 </html>
-
