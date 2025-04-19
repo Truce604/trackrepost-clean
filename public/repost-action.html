@@ -2,61 +2,32 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>🎯 Confirm Repost - TrackRepost</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Repost Track</title>
   <link rel="stylesheet" href="styles.css" />
-  
-  <!-- ✅ Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"></script>
 
-  <!-- ✅ Optional Global Config -->
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
   <script src="/js/firebaseConfig.js"></script>
+  <script src="/js/firebase-init.js"></script>
 </head>
-<body style="background: #111; color: #eee; font-family: sans-serif; padding: 20px;">
-  <header>
-    <div id="site-header"></div>
-  </header>
-
-  <main style="max-width: 800px; margin: 0 auto;">
-    <h1>🚀 Confirm Repost</h1>
-
-    <div id="campaignInfo">
-      <p>Loading campaign...</p>
+<body>
+  <div class="container">
+    <h1 id="campaignTitle">Loading...</h1>
+    <div id="campaignInfo"></div>
+    <div id="repostActions" style="display:none;">
+      <label><input type="checkbox" id="likeTrack" checked /> Like Track (1 credit)</label><br>
+      <label><input type="checkbox" id="commentBoxToggle" /> Leave a Comment (2 credits)</label><br>
+      <textarea id="commentText" style="display:none;" placeholder="Enter comment..."></textarea><br>
+      <button id="submitRepost">✅ Confirm Repost</button>
     </div>
+    <p id="message"></p>
+  </div>
 
-    <div id="repostOptions" style="margin-top: 20px;">
-      <label>
-        <input type="checkbox" id="likeCheckbox" checked />
-        ❤️ Like the track (earn +1 credit)
-      </label>
-      <br />
-      <label>
-        <input type="checkbox" id="followCheckbox" />
-        👤 Follow the artist
-      </label>
-      <br />
-      <label>
-        💬 Leave a comment (earn +2 credits)
-        <br />
-        <textarea id="commentBox" rows="3" style="width: 100%; margin-top: 5px;"></textarea>
-      </label>
-    </div>
-
-    <button id="repostBtn" style="margin-top: 20px; padding: 10px 20px; background-color: #ff9900; color: white; border: none; border-radius: 5px; cursor: pointer;">
-      ✅ Submit Repost
-    </button>
-
-    <p id="repostStatus" style="margin-top: 20px; font-weight: bold;"></p>
-  </main>
-
-  <footer style="margin-top: 40px; text-align: center;">
-    <p>© 2025 TrackRepost</p>
-  </footer>
-
-  <!-- ✅ Script -->
-  <script type="module" src="/js/repost-action.js"></script>
+  <script src="/js/repost-action.js"></script>
 </body>
 </html>
 
