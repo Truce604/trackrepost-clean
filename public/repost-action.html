@@ -3,88 +3,69 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>✅ Repost This Track</title>
+  <title>Repost This Track - TrackRepost</title>
   <link rel="stylesheet" href="styles.css" />
 
-  <!-- Firebase Compat SDKs -->
+  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
-  <!-- Firebase Config -->
-  <script src="/js/firebaseConfig.js" defer></script>
-  <script src="/js/firebase-init.js" defer></script>
+  <!-- Firebase Config & Init -->
+  <script src="/js/firebaseConfig.js"></script>
+  <script src="/js/firebase-init.js"></script>
 
-  <!-- Header -->
+  <!-- Site Header -->
   <script type="module" src="/js/header.js"></script>
-
-  <!-- Script -->
-  <script src="/js/repost-action.js" defer></script>
 
   <style>
     body {
       background: #111;
       color: #eee;
       font-family: sans-serif;
+      padding: 20px;
     }
 
     .container {
-      max-width: 600px;
-      margin: 40px auto;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .track-info {
+      margin-bottom: 20px;
+      background: #1e1e1e;
       padding: 20px;
-      background: #1a1a1a;
-      border-radius: 12px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+      border-radius: 10px;
     }
 
-    .container h1 {
-      font-size: 24px;
-      margin-bottom: 10px;
-    }
-
-    .container p {
-      margin: 8px 0;
-    }
-
-    .options {
-      margin-top: 20px;
-    }
-
-    label {
-      display: block;
-      margin-bottom: 10px;
-    }
-
-    textarea {
+    iframe {
       width: 100%;
-      height: 60px;
-      margin-top: 5px;
-      padding: 8px;
-      border-radius: 6px;
-      border: none;
-      resize: none;
+      height: 166px;
+      border-radius: 8px;
+    }
+
+    label, textarea {
+      display: block;
+      margin-top: 10px;
+    }
+
+    .like-checkbox {
+      margin-top: 10px;
     }
 
     button {
-      background-color: #ff9900;
-      color: #000;
-      font-weight: bold;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 8px;
       margin-top: 20px;
+      background: #ff9900;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      color: white;
+      font-weight: bold;
       cursor: pointer;
     }
 
     button:hover {
-      background-color: #e88a00;
-    }
-
-    iframe {
-      margin-top: 15px;
-      width: 100%;
-      height: 166px;
-      border-radius: 10px;
+      background: #e88a00;
     }
   </style>
 </head>
@@ -93,13 +74,26 @@
 
   <main class="container">
     <h1>✅ Repost This Track</h1>
-    <div id="campaignDetails">
-      <p>Loading...</p>
+    <div id="trackDetails" class="track-info">
+      <p>Loading track info...</p>
     </div>
+
+    <label class="like-checkbox">
+      <input type="checkbox" id="likeTrack" checked />
+      ❤️ Like this track for +1 credit
+    </label>
+
+    <label>
+      💬 Comment to earn +2 credits:
+      <textarea id="commentBox" rows="3" placeholder="Leave a thoughtful comment..."></textarea>
+    </label>
+
+    <button id="repostButton">🚀 Confirm Repost</button>
+
+    <p id="repostStatus" style="margin-top: 20px;"></p>
   </main>
 
-  <footer>
-    <p>© 2025 TrackRepost. All rights reserved.</p>
-  </footer>
+  <script src="/js/repost-action.js"></script>
 </body>
 </html>
+
