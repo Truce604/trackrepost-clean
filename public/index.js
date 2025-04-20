@@ -1,158 +1,151 @@
 // ✅ Ensure Firebase is loaded before running scripts
 if (!window.auth || !window.db) {
-    console.error("🚨 Firebase is not properly initialized! Check firebaseConfig.js.");
+  console.error("🚨 Firebase is not properly initialized! Check firebaseConfig.js.");
 } else {
-    console.log("✅ Firebase Loaded Successfully!");
+  console.log("✅ Firebase Loaded Successfully!");
 }
 
-// ✅ Use Global Firebase References from `firebaseConfig.js`
 const auth = window.auth;
 const db = window.db;
 
-// ✅ Firebase Auth State Listener
+// ✅ Auth State Listener
 auth.onAuthStateChanged(user => {
-    if (user) {
-        console.log(`✅ User logged in: ${user.email}`);
-        updateDashboard(user);
-        document.getElementById("logoutBtn").style.display = "inline-block";
-    } else {
-        console.warn("🚨 No user is logged in.");
-        updateDashboard(null);
-        document.getElementById("logoutBtn").style.display = "none";
-    }
+  if (user) {
+    console.log(`✅ User logged in: ${user.email}`);
+    updateDashboard(user);
+    document.getElementById("logoutBtn")?.style.display = "inline-block";
+  } else {
+    console.warn("🚨 No user is logged in.");
+    updateDashboard(null);
+    document.getElementById("logoutBtn")?.style.display = "none";
+  }
 });
 
-// ✅ Update User Dashboard
+// ✅ Update Dashboard UI
 function updateDashboard(user) {
-    const dashboard = document.getElementById("userDashboard");
-    if (!dashboard) {
-        console.error("❌ Dashboard element not found.");
-        return;
-    }
+  const dashboard = document.getElementById("userDashboard");
+  if (!dashboard) return;
 
-    if (!user) {
-        dashboard.innerHTML = `<h2>You are not logged in.</h2><p>Please log in or sign up.</p>`;
-        return;
-    }
-
+  if (!user) {
     dashboard.innerHTML = `
-        <h2>Welcome, ${user.email}!</h2>
-        <p><strong>Your Credits:</strong> <span id="userCredits">Loading...</span></p>
-        <a href="subscribe.html">
-            <button>💳 Buy Credits</button>
-        </a>
+      <h2>Not Logged In</h2>
+      <p>Please sign in or create an account.</p>
     `;
+    return;
+  }
 
-    // ✅ Load user's credits
-    loadUserCredits(user.uid);
+  dashboard.innerHTML = `
+    <h2>Welcome, ${user.email}</h2>
+    <p><strong>Your Credits:</strong> <span id="userCredits">Loading...</span></p>
+    <a href="credits.html"><button>💳 Buy Credits</button></a>
+  `;
+
+  loadUserCredits(user.uid);
 }
 
-// ✅ Function to load user's credits from Firestore
-function loadUserCredits(userId) {
-    db.collection("users").doc(userId).get()
-        .then(doc => {
-            if (doc.exists) {
-                const credits = doc.data().credits || 0;
-                document.querySelector("#userCredits").textContent = credits;
-                console.log(`✅ User credits loaded: ${credits}`);
-            } else {
-                console.warn("🚨 User document not found.");
-            }
-        })
-        .catch(error => {
-            console.error("❌ Error loading user credits:", error);
-        });
-}
-
-// ✅ Sign Up User
-function signupUser() {
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
-
-    auth.createUserWithEmailAndPassword(email, password)
-        .then(userCredential => {
-            console.log(`✅ User signed up: ${userCredential.user.email}`);
-            updateDashboard(userCredential.user);
-        })
-        .catch(error => {
-            console.error("❌ Signup Error:", error);
-            alert(`Signup Error: ${error.message}`);
-        });
-}
-
-// ✅ Log In User
-function loginUser() {
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
-
-    auth.signInWithEmailAndPassword(email, password)
-        .then(userCredential => {
-            console.log(`✅ User logged in: ${userCredential.user.email}`);
-            updateDashboard(userCredential.user);
-        })
-        .catch(error => {
-            console.error("❌ Login Error:", error);
-            alert(`Login Error: ${error.message}`);
-        });
-}
-
-// ✅ Log Out User
-function logoutUser() {
-    auth.signOut()
-        .then(() => {
-            console.log("✅ User logged out successfully.");
-            updateDashboard(null);
-        })
-        .catch(error => {
-            console.error("❌ Logout Error:", error);
-        });
-}
-
-// ✅ Load Active Campaigns from Firestore
-function loadActiveCampaigns() {
-    console.log("🔄 Loading campaigns...");
-
-    const campaignsDiv = document.getElementById("activeCampaigns");
-    if (!campaignsDiv) {
-        console.error("❌ Campaigns section not found.");
-        return;
+// ✅ Load user credits
+function loadUserCredits(uid) {
+  db.collection("users").doc(uid).get().then(doc => {
+    if (doc.exists) {
+      const credits = doc.data().credits || 0;
+      document.getElementById("userCredits").textContent = credits;
+      console.log(`✅ Loaded credits: ${credits}`);
+    } else {
+      console.warn("⚠️ User document not found.");
     }
-
-    db.collection("campaigns").get()
-        .then(querySnapshot => {
-            campaignsDiv.innerHTML = "";
-
-            if (querySnapshot.empty) {
-                campaignsDiv.innerHTML = "<p>No active campaigns available.</p>";
-            } else {
-                querySnapshot.forEach(doc => {
-                    const data = doc.data();
-                    campaignsDiv.innerHTML += `
-                        <div class="campaign">
-                            <h3>🔥 Now Promoting:</h3>
-                            <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
-                                src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.track)}">
-                            </iframe>
-                            <button onclick="repostTrack('${doc.id}', '${data.owner}', '${data.credits}')">
-                                Repost & Earn ${data.credits} Credits
-                            </button>
-                        </div>
-                    `;
-                });
-            }
-        })
-        .catch(error => {
-            console.error("❌ Error loading active campaigns:", error);
-        });
+  }).catch(err => {
+    console.error("❌ Failed to fetch user credits:", err);
+  });
 }
 
-// ✅ Attach Event Listeners to Buttons
-document.addEventListener("DOMContentLoaded", () => {
-    console.log("✅ Page Loaded Successfully!");
-    loadActiveCampaigns();
+// ✅ Sign up
+function signupUser() {
+  const email = document.getElementById("email")?.value;
+  const password = document.getElementById("password")?.value;
 
-    document.getElementById("signupBtn")?.addEventListener("click", signupUser);
-    document.getElementById("loginBtn")?.addEventListener("click", loginUser);
-    document.getElementById("logoutBtn")?.addEventListener("click", logoutUser);
+  auth.createUserWithEmailAndPassword(email, password).then(res => {
+    console.log("✅ Signup successful:", res.user.email);
+    updateDashboard(res.user);
+  }).catch(err => {
+    console.error("❌ Signup error:", err);
+    alert("Signup Error: " + err.message);
+  });
+}
+
+// ✅ Login
+function loginUser() {
+  const email = document.getElementById("email")?.value;
+  const password = document.getElementById("password")?.value;
+
+  auth.signInWithEmailAndPassword(email, password).then(res => {
+    console.log("✅ Login successful:", res.user.email);
+    updateDashboard(res.user);
+  }).catch(err => {
+    console.error("❌ Login error:", err);
+    alert("Login Error: " + err.message);
+  });
+}
+
+// ✅ Logout
+function logoutUser() {
+  auth.signOut().then(() => {
+    console.log("✅ Logged out");
+    updateDashboard(null);
+  }).catch(err => {
+    console.error("❌ Logout failed:", err);
+  });
+}
+
+// ✅ Load current campaigns
+function loadActiveCampaigns() {
+  const campaignsDiv = document.getElementById("activeCampaigns");
+  if (!campaignsDiv) return;
+
+  campaignsDiv.innerHTML = "<p>Loading campaigns...</p>";
+
+  db.collection("campaigns")
+    .where("active", "==", true)
+    .orderBy("createdAt", "desc")
+    .limit(3)
+    .get()
+    .then(snapshot => {
+      if (snapshot.empty) {
+        campaignsDiv.innerHTML = "<p>No active campaigns found.</p>";
+        return;
+      }
+
+      campaignsDiv.innerHTML = "";
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        campaignsDiv.innerHTML += `
+          <div class="campaign-card">
+            <h3>${data.genre} – ${data.artist}</h3>
+            <iframe
+              width="100%" height="166" scrolling="no" frameborder="no"
+              allow="autoplay"
+              src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.trackUrl)}">
+            </iframe>
+            <a href="repost-action.html?id=${doc.id}">
+              <button>Repost + Earn ${data.credits || 1} Credits</button>
+            </a>
+          </div>
+        `;
+      });
+    })
+    .catch(err => {
+      console.error("❌ Error loading campaigns:", err);
+      campaignsDiv.innerHTML = "<p>Failed to load campaigns.</p>";
+    });
+}
+
+// ✅ Attach event listeners
+document.addEventListener("DOMContentLoaded", () => {
+  console.log("✅ index.js loaded");
+
+  loadActiveCampaigns();
+
+  document.getElementById("signupBtn")?.addEventListener("click", signupUser);
+  document.getElementById("loginBtn")?.addEventListener("click", loginUser);
+  document.getElementById("logoutBtn")?.addEventListener("click", logoutUser);
 });
 
