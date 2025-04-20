@@ -7,7 +7,7 @@ const cors = require("cors")({ origin: true });
 admin.initializeApp();
 const db = admin.firestore();
 
-// ✅ Initialize Square client
+// ✅ Create Checkout (Square)
 const defaultClient = squareConnect.ApiClient.instance;
 defaultClient.basePath = "https://connect.squareup.com";
 
@@ -16,7 +16,6 @@ oauth2.accessToken = functions.config().square.access_token;
 
 const checkoutApi = new squareConnect.CheckoutApi();
 
-// ✅ Force Firebase to use Gen 1 environment (so it doesn't fail on Cloud Run)
 exports.createCheckout = functions.https.onRequest((req, res) => {
   cors(req, res, async () => {
     if (req.method !== "POST") {
@@ -43,7 +42,7 @@ exports.createCheckout = functions.https.onRequest((req, res) => {
                 name: `${credits} Credits`,
                 quantity: "1",
                 base_price_money: {
-                  amount: credits * 10, // 💰 Adjust price per credit here
+                  amount: credits * 10, // 💰 Adjust price per credit
                   currency: "CAD",
                 },
               },
@@ -56,8 +55,8 @@ exports.createCheckout = functions.https.onRequest((req, res) => {
       };
 
       const response = await checkoutApi.createCheckout(locationId, requestBody);
-
       const checkoutUrl = response.checkout.checkout_page_url;
+
       res.status(200).json({ checkoutUrl });
     } catch (err) {
       console.error("❌ Square checkout error:", err);
@@ -66,12 +65,34 @@ exports.createCheckout = functions.https.onRequest((req, res) => {
   });
 });
 
+// ✅ Assign Default User Fields on Signup
+exports.assignUserDefaults = functions.auth.user().onCreate(async (user) => {
+  const userDoc = {
+    email: user.email || "",
+    credits: 30,
+    isPro: false,
+    plan: "Free",
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    badge: {
+      emoji: "🟢",
+      level: 1,
+      name: "Rookie",
+    },
+    usedCoupons: [],
+    soundcloud: {
+      followers: 0,
+      handle: "",
+      url: "",
+    },
+  };
 
-
-
-
-
-
+  try {
+    await db.collection("users").doc(user.uid).set(userDoc);
+    console.log(`✅ Default user profile created for ${user.email}`);
+  } catch (error) {
+    console.error("❌ Error creating user defaults:", error);
+  }
+});
 
 
 
