@@ -1,72 +1,24 @@
-const functions = require("firebase-functions");
-const admin = require("firebase-admin");
-const squareConnect = require("square-connect");
-const { v4: uuidv4 } = require("uuid");
-const cors = require("cors")({ origin: true });
+import { onRequest } from "firebase-functions/v2/https";
+import { onUserCreated } from "firebase-functions/v2/auth";
+import * as admin from "firebase-admin";
+import squareConnect from "square-connect";
+import corsLib from "cors";
+import { v4 as uuidv4 } from "uuid";
 
 admin.initializeApp();
 const db = admin.firestore();
+const cors = corsLib({ origin: true });
 
-// ✅ Create Checkout (Square)
+// ✅ Setup Square SDK
 const defaultClient = squareConnect.ApiClient.instance;
 defaultClient.basePath = "https://connect.squareup.com";
-
-const oauth2 = defaultClient.authentications["oauth2"];
-oauth2.accessToken = functions.config().square.access_token;
-
+defaultClient.authentications["oauth2"].accessToken = process.env.SQUARE_ACCESS_TOKEN;
 const checkoutApi = new squareConnect.CheckoutApi();
 
-exports.createCheckout = functions.https.onRequest((req, res) => {
-  cors(req, res, async () => {
-    if (req.method !== "POST") {
-      return res.status(405).json({ error: "Method Not Allowed" });
-    }
+// ✅ Assign profile when user signs up
+export const assignUserDefaults = onUserCreated(async (event) => {
+  const user = event.data;
 
-    try {
-      const { credits, userId, plan } = req.body;
-      const locationId = functions.config().square.location_id;
-
-      if (!credits || !userId) {
-        return res.status(400).json({ error: "Missing credits or userId" });
-      }
-
-      console.log("✅ Using Square Location ID:", locationId);
-
-      const requestBody = {
-        idempotency_key: uuidv4(),
-        order: {
-          order: {
-            location_id: locationId,
-            line_items: [
-              {
-                name: `${credits} Credits`,
-                quantity: "1",
-                base_price_money: {
-                  amount: credits * 10, // 💰 Adjust price per credit
-                  currency: "CAD",
-                },
-              },
-            ],
-          },
-        },
-        ask_for_shipping_address: false,
-        redirect_url: "https://www.trackrepost.com/payment-success",
-        note: `${credits} Credits Purchase for userId=${userId}${plan ? ` Plan=${plan}` : ""}`,
-      };
-
-      const response = await checkoutApi.createCheckout(locationId, requestBody);
-      const checkoutUrl = response.checkout.checkout_page_url;
-
-      res.status(200).json({ checkoutUrl });
-    } catch (err) {
-      console.error("❌ Square checkout error:", err);
-      res.status(500).json({ error: "Failed to create checkout" });
-    }
-  });
-});
-
-// ✅ Assign Default User Fields on Signup
-exports.assignUserDefaults = functions.auth.user().onCreate(async (user) => {
   const userDoc = {
     email: user.email || "",
     credits: 30,
@@ -88,10 +40,56 @@ exports.assignUserDefaults = functions.auth.user().onCreate(async (user) => {
 
   try {
     await db.collection("users").doc(user.uid).set(userDoc);
-    console.log(`✅ Default user profile created for ${user.email}`);
-  } catch (error) {
-    console.error("❌ Error creating user defaults:", error);
+    console.log(`✅ Created user profile for ${user.email}`);
+  } catch (err) {
+    console.error("❌ Failed to set user doc:", err);
   }
+});
+
+// ✅ Create Square Checkout
+export const createCheckout = onRequest((req, res) => {
+  cors(req, res, async () => {
+    if (req.method !== "POST") {
+      return res.status(405).json({ error: "Method Not Allowed" });
+    }
+
+    try {
+      const { credits, userId, plan } = req.body;
+      const locationId = process.env.SQUARE_LOCATION_ID;
+
+      if (!credits || !userId) {
+        return res.status(400).json({ error: "Missing credits or userId" });
+      }
+
+      const requestBody = {
+        idempotency_key: uuidv4(),
+        order: {
+          order: {
+            location_id: locationId,
+            line_items: [
+              {
+                name: `${credits} Credits`,
+                quantity: "1",
+                base_price_money: {
+                  amount: credits * 10, // CAD cents
+                  currency: "CAD",
+                },
+              },
+            ],
+          },
+        },
+        ask_for_shipping_address: false,
+        redirect_url: "https://www.trackrepost.com/payment-success",
+        note: `${credits} Credits Purchase for userId=${userId}${plan ? ` Plan=${plan}` : ""}`,
+      };
+
+      const response = await checkoutApi.createCheckout(locationId, requestBody);
+      res.status(200).json({ checkoutUrl: response.checkout.checkout_page_url });
+    } catch (err) {
+      console.error("❌ Square Checkout Error:", err);
+      res.status(500).json({ error: "Failed to create checkout" });
+    }
+  });
 });
 
 
