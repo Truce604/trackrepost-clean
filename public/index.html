@@ -7,21 +7,25 @@
   <link rel="stylesheet" href="styles.css" />
   <link rel="icon" href="/favicon.ico" type="image/x-icon" />
 
-  <!-- Firebase Compat SDK -->
+  <!-- Firebase Compat SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
 
-  <!-- Load Firebase config dynamically -->
+  <!-- Load Firebase Config -->
   <script type="module">
     fetch("/js/firebaseConfig.js")
       .then(res => res.text())
       .then(text => {
-        eval(text); // Safely execute config
+        eval(text);
         firebase.initializeApp(window.firebaseConfig);
         console.log("✅ Firebase Initialized");
         initAuth();
       })
-      .catch(err => console.error("❌ Firebase config missing or broken:", err));
+      .catch(err => {
+        console.error("❌ Firebase config missing or broken:", err);
+        document.getElementById("login-ui").innerHTML = "<p style='color:red;'>Firebase config error. Try again later.</p>";
+      });
 
     function initAuth() {
       const auth = firebase.auth();
@@ -34,25 +38,25 @@
         if (user) {
           loginUI.classList.add("hidden");
           userUI.classList.remove("hidden");
-          welcomeText.textContent = `👋 Welcome, ${user.displayName || "Friend"}!`;
+          welcomeText.textContent = `👋 Welcome, ${user.displayName || "friend"}!`;
         } else {
           loginUI.classList.remove("hidden");
           userUI.classList.add("hidden");
         }
       });
 
-      window.login = function () {
+      window.login = () => {
         const provider = new firebase.auth.GoogleAuthProvider();
         auth.signInWithPopup(provider).catch(err => {
           alert("Login failed.");
-          console.error(err);
+          console.error("❌ Auth error:", err);
         });
       };
 
-      window.logout = function () {
+      window.logout = () => {
         auth.signOut().then(() => {
-          window.location.href = "index.html";
-        }).catch(console.error);
+          location.reload();
+        }).catch(err => console.error("❌ Logout error:", err));
       };
     }
   </script>
@@ -133,7 +137,5 @@
 
 </body>
 </html>
-
-
 
 
