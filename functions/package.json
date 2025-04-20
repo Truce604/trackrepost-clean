@@ -1,6 +1,9 @@
 {
   "name": "functions",
-  "version": "1.0.0",
+  "description": "Firebase Cloud Functions for TrackRepost",
+  "scripts": {
+    "start": "firebase emulators:start --only functions"
+  },
   "main": "index.js",
   "engines": {
     "node": "20"
@@ -8,7 +11,7 @@
   "dependencies": {
     "cors": "^2.8.5",
     "firebase-admin": "^11.10.1",
-    "firebase-functions": "^3.24.1",
+    "firebase-functions": "^6.3.2",
     "nodemailer": "^6.10.0",
     "raw-body": "^2.5.2",
     "square-connect": "^6.20201216.0",
