@@ -1,29 +1,94 @@
-const functions = require("firebase-functions");
-const admin = require("firebase-admin");
-const { FieldValue } = admin.firestore;
+import { onRequest } from "firebase-functions/v2/https";
+import { auth } from "firebase-functions/v1"; // ✅ Auth trigger working with ESM
+import * as logger from "firebase-functions/logger";
+import admin from "firebase-admin";
+import { v4 as uuidv4 } from "uuid";
+import corsLib from "cors";
+import squareConnect from "square-connect";
 
-admin.initializeApp();
-
+// ✅ Initialize Firebase Admin
+if (!admin.apps.length) {
+  admin.initializeApp();
+}
 const db = admin.firestore();
+const cors = corsLib({ origin: true });
 
-exports.assignCreditsOnSignup = functions.auth.user().onCreate(async (user) => {
-  if (!user) {
-    console.error('User object is null or undefined');
-    return;
-  }
+// ✅ Setup Square SDK
+const defaultClient = squareConnect.ApiClient.instance;
+defaultClient.basePath = "https://connect.squareup.com";
+const oauth2 = defaultClient.authentications["oauth2"];
+oauth2.accessToken = process.env.SQUARE_ACCESS_TOKEN;
 
-  const { uid, email, displayName } = user;
+const checkoutApi = new squareConnect.CheckoutApi();
+const locationId = process.env.SQUARE_LOCATION_ID;
 
-  const userData = {
-    email: email || "",
-    displayName: displayName || "",
-    createdAt: FieldValue.serverTimestamp(),
+// ✅ Gen 2: Create Checkout Endpoint
+export const createCheckout = onRequest(async (req, res) => {
+  return cors(req, res, async () => {
+    if (req.method !== "POST") {
+      return res.status(405).json({ error: "Method Not Allowed" });
+    }
+
+    try {
+      const { credits, userId, plan } = req.body;
+
+      if (!credits || typeof credits !== "number" || credits <= 0) {
+        return res.status(400).json({ error: "Invalid credits value" });
+      }
+
+      if (!userId || typeof userId !== "string" || userId.trim() === "") {
+        return res.status(400).json({ error: "Invalid userId value" });
+      }
+
+      const requestBody = {
+        idempotency_key: uuidv4(),
+        order: {
+          order: {
+            location_id: locationId,
+            line_items: [
+              {
+                name: `${credits} Credits`,
+                quantity: "1",
+                base_price_money: {
+                  amount: credits * 10, // 🔁 $0.10 per credit
+                  currency: "CAD"
+                }
+              }
+            ]
+          }
+        },
+        ask_for_shipping_address: false,
+        redirect_url: "https://www.trackrepost.com/payment-success",
+        note: `${credits} Credits Purchase for userId=${userId}${plan ? ` Plan=${plan}` : ""}`
+      };
+
+      logger.info("💳 Creating checkout with body:", requestBody);
+
+      const response = await checkoutApi.createCheckout(locationId, requestBody);
+      const checkoutUrl = response.checkout.checkout_page_url;
+
+      return res.status(200).json({ checkoutUrl });
+    } catch (error) {
+      logger.error("❌ Failed to create checkout:", error);
+      return res.status(500).json({ error: "Failed to create checkout" });
+    }
+  });
+});
+
+// ✅ Assign 30 Credits on Signup
+export const assignCreditsOnSignup = auth.user().onCreate(async (user) => {
+  const userRef = db.collection("users").doc(user.uid);
+
+  const data = {
+    email: user.email || "",
+    displayName: user.displayName || "",
     credits: 30,
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
     isPro: false,
     plan: "Free",
     badge: {
-      name: "Rookie",
       emoji: "🟢",
+      name: "Rookie",
       level: 1
     },
     soundcloud: {
@@ -34,67 +99,9 @@ exports.assignCreditsOnSignup = functions.auth.user().onCreate(async (user) => {
     usedCoupons: []
   };
 
-  try {
-    await db.collection("users").doc(uid).set(userData);
-    console.log(`✅ New user initialized: ${email}`);
-  } catch (error) {
-    console.error("Error creating new user:", error);
-  }
+  await userRef.set(data, { merge: true });
+  logger.info(`✅ New user initialized: ${user.uid}`);
 });
-
-exports.squareWebhook = functions.https.onRequest(async (req, res) => {
-  const signature = req.headers["square-signature"];
-  const body = req.rawBody.toString();
-  const webhookUrl = "https://us-central1-your-project-id.cloudfunctions.net/squareWebhook";
-
-  // Verify the signature
-  const isValidSignature = validateSquareSignature(signature, body);
-  if (!isValidSignature) {
-    console.error("Invalid Square webhook signature");
-    res.status(403).send("Invalid signature");
-    return;
-  }
-
-  // Process the webhook event
-  try {
-    const eventData = JSON.parse(body);
-    const userId = eventData.data.object.note.includes("userId=") ? eventData.data.object.note.split("userId=")[1] : null;
-    const credits = eventData.data.object.amount_money.amount / 100; // Assuming amount is in cents
-
-    if (userId) {
-      // Update user's credits in Firestore
-      const userRef = db.collection("users").doc(userId);
-      await db.runTransaction(async (transaction) => {
-        const userDoc = await transaction.get(userRef);
-        if (!userDoc.exists) {
-          throw new Error(`User with ID ${userId} not found`);
-        }
-
-        const newCredits = userDoc.data().credits + credits;
-        transaction.update(userRef, { credits: newCredits });
-      });
-
-      console.log(`✅ Credits updated for user ID ${userId}: +${credits}`);
-    }
-
-    res.status(200).end();
-  } catch (error) {
-    console.error("Error processing Square webhook:", error);
-    res.status(500).send("Error processing webhook");
-  }
-});
-
-function validateSquareSignature(signature, body) {
-  const crypto = require("crypto");
-  const hmac = crypto.createHmac("sha256", functions.config().square.webhook_signature_key);
-  const expectedSignature = hmac.update(body).digest("base64");
-
-  return signature === expectedSignature;
-}
-
-
-
-
 
 
 
