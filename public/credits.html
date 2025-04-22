@@ -3,109 +3,80 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Buy Credits | TrackRepost</title>
-  <link rel="icon" href="/favicon.ico" type="image/x-icon" />
-  <link rel="stylesheet" href="/styles.css" />
+  <title>Buy Credits – TrackRepost</title>
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- Firebase v8 Compat -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="/js/firebaseConfig.js"></script>
 </head>
 <body>
-  <header id="site-header"></header>
+  <header>
+    <h1>💳 Buy Credits</h1>
+    <p>Your balance: <strong id="creditBalance">…</strong> credits</p>
+  </header>
 
-  <main class="container" style="padding: 2rem; max-width: 600px; margin: auto;">
-    <h2>Buy Credits</h2>
-    <p>Your balance: <span id="credit-balance">--</span> credits</p>
-
-    <div style="margin-top: 1rem;">
-      <button onclick="buyCredits(500)">Buy 500 Credits ($24.99)</button>
-      <button onclick="buyCredits(1000)">Buy 1000 Credits ($34.99)</button>
-      <button onclick="buyCredits(2500, 'Artist')">Buy 2500 + Artist Plan ($79.99)</button>
-      <button onclick="buyCredits(5000, 'Network')">Buy 5000 + Network Plan ($139.99)</button>
-      <button onclick="buyCredits(25000, 'Promoter')">Buy 25,000 + Promoter Plan ($549.99)</button>
-    </div>
-
-    <div style="margin-top: 2rem;">
-      <label for="coupon">Have a promo code?</label>
-      <input type="text" id="coupon" placeholder="Enter code like LAUNCH100" />
-      <button onclick="applyCoupon()">Apply</button>
-      <p id="coupon-status" style="color:limegreen;"></p>
+  <main>
+    <div class="plans">
+      <button data-credits="500">500 credits – $24.99</button>
+      <button data-credits="1000">1,000 credits – $34.99</button>
+      <button data-credits="2500">2,500 credits – $79.99</button>
     </div>
   </main>
 
-  <!-- ✅ Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
-
-  <!-- ✅ Config and Init -->
-  <script src="/js/firebaseConfig.js"></script>
-  <script src="/js/firebase-init.js"></script>
-
-  <!-- ✅ Header -->
-  <script src="/js/header.js"></script>
+  <footer>
+    <p>TrackRepost.com — boost your music</p>
+  </footer>
 
   <script>
-    let currentUser;
+    // ——— CONFIG ———
+    const PRICE_CENTS = {
+      500: 2499,
+      1000: 3499,
+      2500: 7999
+    };
+    const FUNCTION_URL = "https://createcheckout-ialajpxs2q-uc.a.run.app"; // ← your Gen2 URL
 
-    firebase.auth().onAuthStateChanged(async (user) => {
-      if (!user) {
-        window.location.href = "/index.html";
-        return;
-      }
+    // ——— AUTH & BALANCE ———
+    firebase.auth().onAuthStateChanged(async user => {
+      if (!user) return void (window.location.href = "index.html");
 
-      currentUser = user;
-      try {
-        const userRef = firebase.firestore().collection("users").doc(user.uid);
-        const doc = await userRef.get();
-        const credits = doc.exists && doc.data().credits ? doc.data().credits : 0;
-        document.getElementById("credit-balance").textContent = credits;
-      } catch (error) {
-        console.error("❌ Failed to load credits:", error);
-        document.getElementById("credit-balance").textContent = "Error";
-      }
+      const snap = await firebase.firestore().collection("users").doc(user.uid).get();
+      const credits = snap.exists ? snap.data().credits || 0 : 0;
+      document.getElementById("creditBalance").textContent = credits;
     });
 
-    function buyCredits(credits, plan = null) {
-      if (!currentUser) return;
+    // ——— PURCHASE FLOW ———
+    document.querySelectorAll("button[data-credits]").forEach(btn => {
+      btn.addEventListener("click", () => buyCredits(parseInt(btn.dataset.credits)));
+    });
 
-      fetch("https://us-central1-trackrepost-921f8.cloudfunctions.net/createCheckout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          credits,
-          userId: currentUser.uid,
-          plan
-        })
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (data.checkoutUrl) {
-          window.location.href = data.checkoutUrl;
-        } else {
-          console.error("⚠️ Invalid checkout response:", data);
-          alert("Checkout failed. Please try again.");
-        }
-      })
-      .catch(err => {
-        console.error("❌ Checkout error:", err);
-        alert("Something went wrong. Please try again.");
-      });
-    }
+    async function buyCredits(credits) {
+      const user = firebase.auth().currentUser;
+      if (!user) return alert("Please sign in first.");
 
-    function applyCoupon() {
-      const code = document.getElementById("coupon").value.trim().toUpperCase();
-      const status = document.getElementById("coupon-status");
-
-      if (code === "LAUNCH100") {
-        firebase.firestore().collection("users").doc(currentUser.uid).update({
-          credits: firebase.firestore.FieldValue.increment(100),
-          usedCoupons: firebase.firestore.FieldValue.arrayUnion(code)
-        }).then(() => {
-          status.textContent = "✅ 100 bonus credits added!";
-        }).catch((err) => {
-          console.error("Coupon error:", err);
-          status.textContent = "❌ Error applying coupon.";
+      const amount = PRICE_CENTS[credits];
+      try {
+        const resp = await fetch(FUNCTION_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ amount, credits, userId: user.uid })
         });
-      } else {
-        status.textContent = "❌ Invalid code.";
+
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({ status: resp.status }));
+          console.error("⚠️ Invalid checkout response:", err);
+          return alert("Error creating checkout. See console for details.");
+        }
+
+        const { checkoutUrl } = await resp.json();
+        // redirect to Square checkout
+        window.location.href = checkoutUrl;
+      } catch (e) {
+        console.error("❌ Checkout fetch error:", e);
+        alert("Network error. Please try again later.");
       }
     }
   </script>
