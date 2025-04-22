@@ -7,17 +7,15 @@
   <link rel="stylesheet" href="styles.css" />
 
   <!-- Firebase v8 SDK -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-
-  <!-- Your Firebase config -->
-  <script src="/js/firebaseConfig.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script defer src="/js/firebaseConfig.js"></script>
 </head>
 <body>
   <header class="header">
     <h1 class="title">💳 Buy Credits</h1>
-    <p class="subtitle">Your balance: <strong id="creditBalance">...</strong> credits</p>
+    <p class="subtitle">Your balance: <strong id="creditBalance">Loading...</strong> credits</p>
   </header>
 
   <main class="container">
@@ -33,25 +31,39 @@
   </footer>
 
   <script>
-    const FUNCTION_URL = "https://createcheckout-ialajpxs2q-uc.a.run.app"; // ✅ Update if needed
+    const FUNCTION_URL = "https://createcheckout-ialajpxs2q-uc.a.run.app";
     const PRICE_CENTS = {
       500: 2499,
       1000: 3499,
       2500: 7999
     };
 
-    firebase.auth().onAuthStateChanged(async user => {
-      if (!user) {
-        window.location.href = "index.html";
-        return;
-      }
+    // Wait until Firebase is fully loaded (since we used defer)
+    window.addEventListener("DOMContentLoaded", () => {
+      const creditBalance = document.getElementById("creditBalance");
 
-      const snap = await firebase.firestore().collection("users").doc(user.uid).get();
-      const credits = snap.exists ? snap.data().credits || 0 : 0;
-      document.getElementById("creditBalance").textContent = credits;
+      firebase.auth().onAuthStateChanged(async user => {
+        if (!user) {
+          window.location.href = "index.html";
+          return;
+        }
 
+        try {
+          const snap = await firebase.firestore().collection("users").doc(user.uid).get();
+          const credits = snap.exists ? snap.data().credits || 0 : 0;
+          creditBalance.textContent = credits;
+        } catch (err) {
+          console.error("⚠️ Failed to fetch credits:", err);
+          creditBalance.textContent = "Error";
+        }
+      });
+
+      // ✅ Add click listeners after DOM is ready
       document.querySelectorAll(".credit-button").forEach(button => {
         button.addEventListener("click", async () => {
+          const user = firebase.auth().currentUser;
+          if (!user) return alert("You must be logged in.");
+
           const creditsToBuy = parseInt(button.dataset.credits);
           const amount = PRICE_CENTS[creditsToBuy];
 
@@ -68,7 +80,7 @@
 
             if (!res.ok) {
               const err = await res.json().catch(() => ({}));
-              console.error("❌ Error from checkout endpoint:", err);
+              console.error("❌ Checkout error:", err);
               return alert("Something went wrong during checkout.");
             }
 
@@ -76,7 +88,7 @@
             window.location.href = checkoutUrl;
           } catch (err) {
             console.error("❌ Network error:", err);
-            alert("Could not connect to payment server.");
+            alert("Checkout server is unavailable.");
           }
         });
       });
@@ -152,7 +164,5 @@
   </style>
 </body>
 </html>
-
-
 
 
