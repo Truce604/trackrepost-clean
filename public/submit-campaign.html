@@ -3,47 +3,44 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Submit Campaign | TrackRepost</title>
-  <link rel="stylesheet" href="/styles.css" />
+  <title>Submit Campaign - TrackRepost</title>
+  <link rel="stylesheet" href="styles.css" />
 
-  <!-- Firebase SDK -->
+  <!-- ✅ Firebase Compat SDKs -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
-  <!-- Firebase Config -->
-  <script src="/js/firebaseConfig.js" defer></script>
-  <script src="/js/firebase-init.js" defer></script>
-
-  <!-- Header + Script -->
-  <script src="/js/header.js" defer></script>
-  <script src="/js/submit-campaign.js" defer></script>
+  <!-- ✅ Your Firebase Config -->
+  <script src="/js/firebaseConfig.js"></script>
 </head>
 <body>
-  <header id="site-header"></header>
+  <header>
+    <h1>📢 Submit a Campaign</h1>
+    <p>Welcome! You have <strong id="creditBalance">...</strong> credits.</p>
+  </header>
 
-  <main class="container">
-    <h1>🚀 Submit a Campaign</h1>
-    <p>You have <strong><span id="creditBalance">Loading...</span></strong> credits available to use.</p>
-
-    <form id="campaignForm">
+  <main>
+    <form id="campaignForm" class="campaign-form">
       <label for="trackUrl">SoundCloud Track URL</label>
-      <input type="url" id="trackUrl" required placeholder="https://soundcloud.com/your-track" />
+      <input type="url" id="trackUrl" placeholder="https://soundcloud.com/artist/track" required />
 
       <label for="genre">Genre</label>
-      <input type="text" id="genre" required placeholder="e.g. Hip-Hop, EDM, Drum & Bass" />
+      <input type="text" id="genre" placeholder="e.g. Hip-Hop, EDM" required />
 
       <label for="credits">Credits to Spend</label>
-      <input type="number" id="credits" required min="10" step="10" placeholder="e.g. 500" />
+      <input type="number" id="credits" placeholder="e.g. 500" min="1" required />
 
-      <button type="submit">Submit Campaign</button>
+      <button type="submit" id="submitBtn">Submit Campaign</button>
     </form>
   </main>
 
   <footer>
-    <p>&copy; 2025 TrackRepost — All rights reserved.</p>
+    <p>🚀 TrackRepost – Launch your next hit</p>
   </footer>
+
+  <!-- ✅ Submit Campaign Script -->
+  <script src="/js/submit-campaign.js"></script>
 </body>
 </html>
-
 
