@@ -10,7 +10,7 @@ window.firebaseConfig = {
 
 // ✅ Square public frontend keys
 window.SQUARE_APP_ID = "EAAAl_xqHJGyrWyUE53BgNQZoGbjI64lplndYyxNXAkv--1dx7owzl14oq64aHwp";
-window.SQUARE_LOCATION_ID = "sq0idp-PgaanSd67uGXtHuBFn7cZA";
+window.SQUARE_LOCATION_ID = "LC6EFQHAP6VWM";
 
 // ✅ Initialize Firebase using the global config
 firebase.initializeApp(window.firebaseConfig);
