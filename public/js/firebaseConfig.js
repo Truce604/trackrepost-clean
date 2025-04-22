@@ -12,6 +12,9 @@ window.firebaseConfig = {
 window.SQUARE_APP_ID = "EAAAl_xqHJGyrWyUE53BgNQZoGbjI64lplndYyxNXAkv--1dx7owzl14oq64aHwp";
 window.SQUARE_LOCATION_ID = "sq0idp-PgaanSd67uGXtHuBFn7cZA";
 
+// ✅ Initialize Firebase using the global config
+firebase.initializeApp(window.firebaseConfig);
+
 console.log("✅ Firebase config loaded");
 console.log("✅ Square App ID:", window.SQUARE_APP_ID);
 console.log("✅ Square Location ID:", window.SQUARE_LOCATION_ID);
