@@ -1,79 +1,63 @@
-const functions = require("firebase-functions");
-const admin = require("./firebaseAdmin"); // shared initialized admin instance
-const crypto = require("crypto");
-const getRawBody = require("raw-body");
+// /api/square/webhook.js (Vercel API Route)
+import { buffer } from "micro";
+import * as admin from "firebase-admin";
+import crypto from "crypto";
+
+if (!admin.apps.length) {
+  admin.initializeApp();
+}
+
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
 
 const db = admin.firestore();
 
-exports.squareWebhook = functions
-  .runWith({ secrets: ["SQUARE_WEBHOOK_SIGNATURE_KEY"] })
-  .https.onRequest(async (req, res) => {
-    const signature = req.headers["x-square-signature"];
-    const webhookSecret = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
+export default async function handler(req, res) {
+  if (req.method !== "POST") return res.status(405).end("Method Not Allowed");
 
-    if (!webhookSecret) {
-      console.error("❌ Missing SQUARE_WEBHOOK_SIGNATURE_KEY");
-      return res.status(500).send("Webhook secret not set");
-    }
+  const signature = req.headers["x-square-signature"];
+  const webhookUrl = "https://www.trackrepost.com/api/square/webhook";
+  const signatureKey = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
 
-    let rawBody;
-    try {
-      rawBody = await getRawBody(req);
-    } catch (err) {
-      console.error("❌ Failed to read raw body:", err);
-      return res.status(400).send("Invalid request body");
-    }
+  const rawBody = (await buffer(req)).toString("utf8");
 
-    // ✅ Verify webhook signature
-    const hmac = crypto.createHmac("sha1", webhookSecret);
-    hmac.update(rawBody);
-    const expectedSignature = hmac.digest("base64");
+  const hmac = crypto
+    .createHmac("sha1", signatureKey)
+    .update(webhookUrl + rawBody)
+    .digest("base64");
 
-    if (signature !== expectedSignature) {
-      console.error("❌ Invalid signature");
-      return res.status(403).send("Unauthorized");
-    }
+  if (hmac !== signature) {
+    console.error("❌ Invalid signature");
+    return res.status(403).end("Forbidden");
+  }
 
-    let event;
-    try {
-      event = JSON.parse(rawBody);
-    } catch (err) {
-      console.error("❌ Error parsing webhook event:", err);
-      return res.status(400).send("Bad Request");
-    }
+  const event = JSON.parse(rawBody);
 
+  try {
     if (event.type === "payment.created") {
-      const note = event.data?.object?.payment?.note;
-      console.log("🔔 Webhook note:", note);
+      const note = event.data.object.payment.note;
+      const match = note.match(/(\d+)\sCredits\sPurchase\sfor\suserId=(\w+)/);
 
-      const match = note?.match(/(\d+)\sCredits\sPurchase\sfor\suserId=([\w-]+)(?:\sPlan=(\w+))?/);
+      if (!match) throw new Error("Invalid note format");
 
-      if (match) {
-        const credits = parseInt(match[1], 10);
-        const userId = match[2];
-        const plan = match[3] || null;
+      const credits = parseInt(match[1], 10);
+      const userId = match[2];
 
-        try {
-          const userRef = db.collection("users").doc(userId);
-          await userRef.update({
-            credits: admin.firestore.FieldValue.increment(credits),
-            ...(plan && {
-              plan,
-              planActivatedAt: admin.firestore.Timestamp.now()
-            })
-          });
+      const userRef = db.collection("users").doc(userId);
+      await userRef.update({
+        credits: admin.firestore.FieldValue.increment(credits),
+      });
 
-          console.log(`✅ Added ${credits} credits to user ${userId}${plan ? ` with plan ${plan}` : ""}`);
-          return res.status(200).send("Credits updated");
-        } catch (err) {
-          console.error("❌ Firestore update error:", err);
-          return res.status(500).send("Error updating user");
-        }
-      } else {
-        console.warn("⚠️ No valid note format found");
-      }
+      console.log(`✅ Added ${credits} credits to user ${userId}`);
     }
 
-    res.status(200).send("Event ignored");
-  });
+    res.status(200).end("OK");
+  } catch (err) {
+    console.error("❌ Webhook error:", err);
+    res.status(500).end("Internal Server Error");
+  }
+}
 
