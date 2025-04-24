@@ -1,83 +1,78 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
-const cors = require("cors")({ origin: true });
+const express = require("express");
+const cors = require("cors");
 const { v4: uuidv4 } = require("uuid");
 const squareConnect = require("square-connect");
 
 admin.initializeApp();
 const db = admin.firestore();
 
-// ✅ Square Config (from Firebase environment config)
-const squareConfig = functions.config().square || {};
-const SQUARE_ACCESS_TOKEN = squareConfig.access_token;
-const SQUARE_LOCATION_ID = squareConfig.location_id;
+// 🔐 Get from Firebase config
+const accessToken = functions.config().square.access_token;
+const locationId = functions.config().square.location_id;
 
-if (!SQUARE_ACCESS_TOKEN || !SQUARE_LOCATION_ID) {
-  console.error("❌ Missing SQUARE_ACCESS_TOKEN or SQUARE_LOCATION_ID");
+if (!accessToken || !locationId) {
+  console.error("❌ Missing SQUARE_ACCESS_TOKEN or SQUARE_LOCATION_ID from config.");
 }
 
-// ✅ Square SDK Setup
+// ✅ Square setup
 const defaultClient = squareConnect.ApiClient.instance;
 defaultClient.basePath = "https://connect.squareup.com";
-const oauth2 = defaultClient.authentications["oauth2"];
-oauth2.accessToken = SQUARE_ACCESS_TOKEN;
-const checkoutApi = new squareConnect.CheckoutApi();
+defaultClient.authentications["oauth2"].accessToken = accessToken;
 
-// ✅ Express-style checkout endpoint
-exports.createCheckout = functions.https.onRequest((req, res) => {
-  cors(req, res, async () => {
-    if (req.method !== "POST") {
-      return res.status(405).json({ error: "Method Not Allowed" });
+// ✅ Express app for createCheckout
+const app = express();
+app.use(cors({ origin: true }));
+app.use(express.json());
+
+app.post("/", async (req, res) => {
+  try {
+    const { credits, userId, plan } = req.body;
+
+    if (!credits || !userId) {
+      return res.status(400).json({ error: "Missing required fields" });
     }
 
-    try {
-      const { credits, userId, plan } = req.body;
+    const checkoutApi = new squareConnect.CheckoutApi();
 
-      if (!credits || !userId) {
-        return res.status(400).json({ error: "Missing required fields" });
-      }
-
-      const amountInCents = credits * 10;
-
-      const requestBody = {
-        idempotency_key: uuidv4(),
+    const body = {
+      idempotency_key: uuidv4(),
+      order: {
         order: {
-          order: {
-            location_id: SQUARE_LOCATION_ID,
-            line_items: [
-              {
-                name: `${credits} Credits`,
-                quantity: "1",
-                base_price_money: {
-                  amount: amountInCents,
-                  currency: "CAD",
-                },
+          location_id: locationId,
+          line_items: [
+            {
+              name: `${credits} Credits`,
+              quantity: "1",
+              base_price_money: {
+                amount: credits * 10, // Example: 1000 = $10.00 CAD
+                currency: "CAD",
               },
-            ],
-          },
+            },
+          ],
         },
-        ask_for_shipping_address: false,
-        redirect_url: "https://www.trackrepost.com/payment-success",
-        note: `${credits} Credits Purchase for userId=${userId}${plan ? ` Plan=${plan}` : ""}`,
-      };
+      },
+      ask_for_shipping_address: false,
+      redirect_url: "https://www.trackrepost.com/payment-success",
+      note: `${credits} Credits Purchase for userId=${userId}${plan ? ` Plan=${plan}` : ""}`,
+    };
 
-      console.log("💳 Creating checkout with body:", requestBody);
+    console.log("💳 Creating checkout with body:", body);
 
-      const response = await checkoutApi.createCheckout(SQUARE_LOCATION_ID, requestBody);
-      const checkoutUrl = response.checkout.checkout_page_url;
-
-      return res.json({ checkoutUrl });
-    } catch (error) {
-      console.error("❌ Failed to create checkout:", error.message);
-      return res.status(500).json({ error: error.message || "Checkout failed" });
-    }
-  });
+    const response = await checkoutApi.createCheckout(locationId, body);
+    return res.json({ checkoutUrl: response.checkout.checkout_page_url });
+  } catch (err) {
+    console.error("❌ Failed to create checkout:", err);
+    return res.status(500).json({ error: "Failed to create checkout" });
+  }
 });
 
-// ✅ Firebase Auth signup trigger
+exports.createCheckout = functions.https.onRequest(app);
+
+// ✅ Correct v1 auth trigger (fixes your error!)
 exports.assignCreditsOnSignup = functions.auth.user().onCreate(async (user) => {
   const userRef = db.collection("users").doc(user.uid);
-
   await userRef.set({
     email: user.email || "",
     displayName: user.displayName || "",
@@ -90,7 +85,7 @@ exports.assignCreditsOnSignup = functions.auth.user().onCreate(async (user) => {
     usedCoupons: [],
   }, { merge: true });
 
-  console.log(`✅ Assigned 30 credits to ${user.uid}`);
+  console.log(`✅ Initialized user ${user.uid} with 30 credits`);
 });
 
 
