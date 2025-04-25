@@ -11,7 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const userId = user.uid;
 
     try {
-      // ✅ Step 1: Fetch user's repost history
+      // ✅ Step 1: Get reposted campaign IDs
       const repostsSnapshot = await db.collection("reposts")
         .where("userId", "==", userId)
         .get();
@@ -24,7 +24,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       });
 
-      // ✅ Step 2: Fetch all available campaigns
+      // ✅ Step 2: Get active campaigns
       const campaignSnapshot = await db.collection("campaigns")
         .where("credits", ">", 0)
         .orderBy("createdAt", "desc")
@@ -37,15 +37,16 @@ document.addEventListener("DOMContentLoaded", () => {
         const data = doc.data();
         const id = doc.id;
 
-        // ❌ Skip own campaigns and already reposted ones
+        // ❌ Skip if user owns the campaign or already reposted
         if (data.userId === userId || repostedCampaignIds.has(id)) return;
 
+        // ✅ Create campaign card
         const card = document.createElement("div");
         card.className = "campaign-card";
         card.innerHTML = `
           <h3>${data.title || "Untitled"}</h3>
           <p><strong>Artist:</strong> ${data.artist || "Unknown"}</p>
-          <p><strong>Genre:</strong> ${data.genre}</p>
+          <p><strong>Genre:</strong> ${data.genre || "N/A"}</p>
           <p><strong>Credits:</strong> ${data.credits}</p>
           <p><a href="${data.trackUrl}" target="_blank">🎵 Listen on SoundCloud</a></p>
           <a href="repost-action.html?id=${id}" class="button">🔁 Repost This Track</a>
@@ -56,7 +57,12 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       if (!foundAny) {
-        container.innerHTML = `<p>🎉 You've reposted all available tracks for now!</p>`;
+        container.innerHTML = `
+          <div class="no-campaigns">
+            <p>🎉 You've reposted all available tracks for now!</p>
+            <p>🔥 New campaigns are added daily. Check back soon!</p>
+          </div>
+        `;
       }
 
     } catch (err) {
