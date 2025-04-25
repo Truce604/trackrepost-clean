@@ -121,7 +121,7 @@
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            amount,
+            amount: parseInt(amount),  // 🔥 FORCE INTEGER
             credits,
             userId: user.uid,
           }),
