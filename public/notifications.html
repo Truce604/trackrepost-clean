@@ -2,133 +2,79 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Notifications - TrackRepost</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🔔 Notifications | TrackRepost</title>
   <link rel="stylesheet" href="styles.css" />
 
-  <!-- Firebase Compat SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+  <!-- Firebase Config + Init -->
   <script src="/js/firebaseConfig.js"></script>
-  <script>firebase.initializeApp(window.firebaseConfig);</script>
+  <script src="/js/firebase-init.js"></script>
 
   <!-- Header -->
   <script type="module" src="/js/header.js"></script>
 
+  <!-- Notifications Logic -->
+  <script src="/js/notifications.js" defer></script>
+
   <style>
     body {
-      background: #111;
-      color: #eee;
-      font-family: Arial, sans-serif;
+      background-color: #111;
+      color: #fff;
+      font-family: 'Segoe UI', sans-serif;
       margin: 0;
-      padding: 0;
+      padding: 20px;
     }
 
     h1 {
       text-align: center;
-      padding: 30px 20px 10px;
-      color: #ffa500;
+      color: #ff9900;
+      margin-bottom: 30px;
     }
 
-    .container {
-      max-width: 900px;
+    .notifications-container {
+      max-width: 800px;
       margin: 0 auto;
-      padding: 20px;
     }
 
-    .notification {
-      background: #1e1e1e;
-      border: 1px solid #333;
-      padding: 15px 20px;
-      border-radius: 10px;
-      margin-bottom: 15px;
-      box-shadow: 0 0 8px rgba(0,0,0,0.4);
+    .notification-card {
+      background: #1c1c1c;
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 20px;
+      box-shadow: 0 0 10px rgba(255, 153, 0, 0.3);
     }
 
-    .notification h3 {
-      margin: 0 0 8px;
-      color: #ffd700;
+    .notification-card p {
+      margin: 0;
+      font-size: 15px;
     }
 
-    .notification p {
-      margin: 5px 0;
-      font-size: 14px;
-      color: #bbb;
-    }
-
-    .no-notifications {
-      text-align: center;
-      padding: 60px 20px;
-      font-size: 1.2rem;
-      color: #666;
-    }
-
-    footer {
-      text-align: center;
-      font-size: 13px;
-      color: #999;
-      margin-top: 60px;
-      padding: 20px 0;
-      background: #1a1a1a;
+    .timestamp {
+      margin-top: 5px;
+      font-size: 12px;
+      color: #aaa;
     }
   </style>
 </head>
+
 <body>
   <div id="site-header"></div>
 
-  <h1>🔔 Notifications</h1>
-  <main class="container" id="notifications-container">
-    <p class="no-notifications">Loading your notifications...</p>
+  <main>
+    <h1>🔔 Your Notifications</h1>
+    <div id="notifications" class="notifications-container">
+      <p>Loading notifications...</p>
+    </div>
   </main>
 
-  <footer>
-    <p>© 2025 TrackRepost. All Rights Reserved.</p>
+  <footer style="text-align: center; margin-top: 30px;">
+    <p>© 2025 TrackRepost. All rights reserved.</p>
   </footer>
-
-  <script>
-    const db = firebase.firestore();
-    const auth = firebase.auth();
-    const container = document.getElementById("notifications-container");
-
-    auth.onAuthStateChanged(async (user) => {
-      if (!user) {
-        container.innerHTML = `<p class="no-notifications">⚠️ Please log in to see notifications.</p>`;
-        return;
-      }
-
-      try {
-        const snap = await db.collection("transactions")
-          .where("userId", "==", user.uid)
-          .orderBy("timestamp", "desc")
-          .limit(15)
-          .get();
-
-        if (snap.empty) {
-          container.innerHTML = `<p class="no-notifications">🎉 No recent activity yet. Start reposting or submit a campaign!</p>`;
-          return;
-        }
-
-        container.innerHTML = "";
-        snap.forEach(doc => {
-          const data = doc.data();
-          const date = data.timestamp?.toDate().toLocaleString() || "Unknown time";
-
-          const div = document.createElement("div");
-          div.className = "notification";
-          div.innerHTML = `
-            <h3>${data.type === "earned" ? "💰 Credits Earned" : "📤 Credits Spent"}</h3>
-            <p><strong>Amount:</strong> ${data.amount}</p>
-            <p><strong>Reason:</strong> ${data.reason || "No reason specified"}</p>
-            <p><strong>Time:</strong> ${date}</p>
-          `;
-          container.appendChild(div);
-        });
-      } catch (err) {
-        console.error("Failed to load notifications", err);
-        container.innerHTML = `<p class="no-notifications">❌ Failed to load notifications.</p>`;
-      }
-    });
-  </script>
 </body>
 </html>
+
