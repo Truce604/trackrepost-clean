@@ -1,62 +1,87 @@
-// ✅ Explore Campaigns Script
+document.addEventListener("DOMContentLoaded", () => {
+  const container = document.getElementById("campaignList");
 
-firebase.auth().onAuthStateChanged(async (user) => {
-  const campaignList = document.getElementById("campaignList");
-  const db = firebase.firestore();
-
-  if (!user) {
-    campaignList.innerHTML = "<p>Please sign in to explore campaigns.</p>";
-    return;
-  }
-
-  try {
-    // Get campaign IDs user already reposted
-    const repostsSnap = await db.collection("reposts")
-      .where("userId", "==", user.uid)
-      .get();
-
-    const repostedIds = repostsSnap.docs.map(doc => doc.data().campaignId);
-
-    // Fetch active campaigns
-    const snap = await db.collection("campaigns")
-      .where("active", "==", true)
-      .orderBy("createdAt", "desc")
-      .get();
-
-    campaignList.innerHTML = "";
-
-    snap.forEach((doc) => {
-      const data = doc.data();
-      const campaignId = doc.id;
-
-      if (repostedIds.includes(campaignId)) return;
-
-      const el = document.createElement("div");
-      el.className = "campaign-card";
-      el.innerHTML = `
-        <img src="${data.artworkUrl || "/images/default-art.png"}" alt="Artwork" />
-        <div class="campaign-details">
-          <h3>${data.title || "Untitled Track"} <span style="font-weight: normal;">by</span> ${data.artist || "Unknown"}</h3>
-          <p><strong>Genre:</strong> ${data.genre}</p>
-          <p><strong>Credits:</strong> ${data.credits}</p>
-          <div class="action-bar">
-            <label>
-              <input type="checkbox" checked data-like="${campaignId}"> Like this track (1 credit)
-            </label>
-            <input type="text" placeholder="Optional comment for 2 credits" data-comment="${campaignId}" />
-            <button class="repost-btn" onclick="location.href='repost-action.html?id=${campaignId}'">✅ Repost This Track</button>
-          </div>
-        </div>
-      `;
-      campaignList.appendChild(el);
-    });
-
-    if (!campaignList.hasChildNodes()) {
-      campaignList.innerHTML = "<p>🎉 You’ve reposted all available tracks for now!</p>";
+  firebase.auth().onAuthStateChanged(async (user) => {
+    if (!user) {
+      container.innerHTML = `<p>⚠️ Please log in to explore campaigns.</p>`;
+      return;
     }
-  } catch (err) {
-    console.error("Error loading campaigns:", err);
-    campaignList.innerHTML = "<p>❌ Error loading campaigns. Please try again later.</p>";
-  }
+
+    const db = firebase.firestore();
+    const userId = user.uid;
+
+    try {
+      // ✅ Step 1: Get all reposts by user
+      const repostsSnapshot = await db.collection("reposts")
+        .where("userId", "==", userId)
+        .get();
+
+      const repostedCampaignIds = new Set();
+      repostsSnapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.campaignId) {
+          repostedCampaignIds.add(data.campaignId);
+        }
+      });
+
+      // ✅ Step 2: Get active campaigns with credits
+      const campaignSnapshot = await db.collection("campaigns")
+        .where("credits", ">", 0)
+        .orderBy("createdAt", "desc")
+        .get();
+
+      container.innerHTML = "";
+      let foundAny = false;
+
+      campaignSnapshot.forEach(doc => {
+        const data = doc.data();
+        const id = doc.id;
+
+        // ❌ Skip own campaigns and already reposted ones
+        if (data.userId === userId || repostedCampaignIds.has(id)) return;
+
+        // ✅ Create card
+        const card = document.createElement("div");
+        card.className = "campaign-card";
+
+        const image = data.artwork || "https://via.placeholder.com/90"; // fallback artwork
+
+        card.innerHTML = `
+          <img src="${image}" alt="Artwork">
+          <div class="campaign-details">
+            <h3>${data.title || "Untitled"}</h3>
+            <p><strong>Artist:</strong> ${data.artist || "Unknown"}</p>
+            <p><strong>Genre:</strong> ${data.genre || "N/A"}</p>
+            <p><strong>Credits:</strong> ${data.credits}</p>
+            <p><a href="${data.trackUrl}" target="_blank">🎵 Listen on SoundCloud</a></p>
+            <div class="action-bar">
+              <label><input type="checkbox" checked disabled /> 👍 Like this track (1 credit)</label>
+              <label><input type="checkbox" id="commentToggle-${id}" /> 💬 Leave a comment (2 credits)</label>
+              <input type="text" id="commentInput-${id}" placeholder="Optional comment..." style="display:none;" />
+              <a href="repost-action.html?id=${id}" class="repost-btn">🔁 Repost This Track</a>
+            </div>
+          </div>
+        `;
+
+        // 📝 Show/hide comment input
+        const commentToggle = card.querySelector(`#commentToggle-${id}`);
+        const commentInput = card.querySelector(`#commentInput-${id}`);
+        commentToggle.addEventListener("change", () => {
+          commentInput.style.display = commentToggle.checked ? "block" : "none";
+        });
+
+        container.appendChild(card);
+        foundAny = true;
+      });
+
+      if (!foundAny) {
+        container.innerHTML = `<p>🎉 You've already reposted all available tracks. New campaigns coming soon!</p>`;
+      }
+
+    } catch (err) {
+      console.error("❌ Error loading campaigns:", err);
+      container.innerHTML = `<p>❌ Failed to load campaigns. Please try again later.</p>`;
+    }
+  });
 });
 
