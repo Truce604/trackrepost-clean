@@ -27,8 +27,8 @@ document.addEventListener("DOMContentLoaded", () => {
       // ✅ Step 2: Get active campaigns with credits > 0
       const campaignSnapshot = await db.collection("campaigns")
         .where("credits", ">", 0)
-        .orderBy("credits", "desc")  // ✅ Fix: first order by the inequality field
-        .orderBy("createdAt", "desc") // ✅ Secondary sort
+        .orderBy("credits", "desc")
+        .orderBy("createdAt", "desc")
         .get();
 
       container.innerHTML = "";
@@ -41,14 +41,28 @@ document.addEventListener("DOMContentLoaded", () => {
         // ❌ Skip own campaigns and already reposted ones
         if (data.userId === userId || repostedCampaignIds.has(id)) return;
 
+        // ✅ Generate SoundCloud artwork thumbnail
+        let artworkUrl = "";
+        if (data.artwork) {
+          artworkUrl = data.artwork;
+        } else if (data.trackUrl) {
+          const trackIdMatch = data.trackUrl.match(/tracks\/(\d+)/);
+          if (trackIdMatch) {
+            const trackId = trackIdMatch[1];
+            artworkUrl = `https://i1.sndcdn.com/artworks-${trackId}-t500x500.jpg`;
+          } else {
+            artworkUrl = "https://i1.sndcdn.com/avatars-000000000000-000000-t500x500.jpg"; // generic SC avatar if no match
+          }
+        } else {
+          artworkUrl = "https://i1.sndcdn.com/avatars-000000000000-000000-t500x500.jpg"; // generic backup
+        }
+
         // ✅ Create campaign card
         const card = document.createElement("div");
         card.className = "campaign-card";
 
-        const image = data.artwork || "https://via.placeholder.com/90"; // fallback if no artwork
-
         card.innerHTML = `
-          <img src="${image}" alt="Artwork">
+          <img src="${artworkUrl}" alt="Artwork">
           <div class="campaign-details">
             <h3>${data.title || "Untitled"}</h3>
             <p><strong>Artist:</strong> ${data.artist || "Unknown"}</p>
@@ -85,4 +99,5 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
+
 
