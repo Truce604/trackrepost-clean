@@ -41,39 +41,22 @@ document.addEventListener("DOMContentLoaded", () => {
         // ❌ Skip own campaigns and already reposted ones
         if (data.userId === userId || repostedCampaignIds.has(id)) return;
 
-        // ✅ Create campaign card
+        // ✅ Build card
         const card = document.createElement("div");
         card.className = "campaign-card";
 
+        const artworkUrl = data.artwork || "https://i1.sndcdn.com/artworks-000000000000-000000-t500x500.jpg";
+
         card.innerHTML = `
-          <iframe 
-            width="100%" 
-            height="120" 
-            scrolling="no" 
-            frameborder="no" 
-            allow="autoplay" 
-            src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.trackUrl)}&color=%23ff5500&inverse=false&auto_play=false&show_user=true">
-          </iframe>
+          <img src="${artworkUrl}" alt="Artwork">
           <div class="campaign-details">
             <h3>${data.title || "Untitled"}</h3>
             <p><strong>Artist:</strong> ${data.artist || "Unknown"}</p>
             <p><strong>Genre:</strong> ${data.genre || "N/A"}</p>
             <p><strong>Credits:</strong> ${data.credits}</p>
-            <div class="action-bar">
-              <label><input type="checkbox" checked disabled /> 👍 Like this track (1 credit)</label>
-              <label><input type="checkbox" id="commentToggle-${id}" /> 💬 Leave a comment (2 credits)</label>
-              <input type="text" id="commentInput-${id}" placeholder="Optional comment..." style="display:none;" />
-              <a href="repost-action.html?id=${id}" class="repost-btn">🔁 Repost This Track</a>
-            </div>
+            <a href="repost-action.html?id=${id}" class="repost-btn">🔁 Repost</a>
           </div>
         `;
-
-        // 📝 Toggle comment input visibility
-        const commentToggle = card.querySelector(`#commentToggle-${id}`);
-        const commentInput = card.querySelector(`#commentInput-${id}`);
-        commentToggle.addEventListener("change", () => {
-          commentInput.style.display = commentToggle.checked ? "block" : "none";
-        });
 
         container.appendChild(card);
         foundAny = true;
