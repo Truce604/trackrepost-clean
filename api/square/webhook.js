@@ -8,7 +8,7 @@ if (!admin.apps.length) {
 
 export const config = {
   api: {
-    bodyParser: false, // we need the raw body
+    bodyParser: false,
   },
 };
 
@@ -19,22 +19,26 @@ export default async function handler(req, res) {
 
   try {
     const rawBody = await buffer(req);
-    const signature = req.headers['x-square-signature'];
-
-    // (Optional) You can verify the signature if you want
-    console.log('🔔 Webhook received from Square');
-
     const event = JSON.parse(rawBody.toString());
 
-    if (event.type !== 'order.created' && event.type !== 'payment.created') {
-      console.log('⚠️ Ignoring irrelevant Square webhook event:', event.type);
-      return res.status(200).send('Ignored non-payment event');
+    console.log('🔔 Webhook event received:', event.type);
+
+    if (event.type !== 'payment.created' && event.type !== 'payment.updated') {
+      console.log('⚠️ Ignoring non-payment event:', event.type);
+      return res.status(200).send('Ignored');
     }
 
-    const note = event.data?.object?.payment?.note || event.data?.object?.order?.note;
+    const payment = event.data?.object?.payment;
+
+    if (!payment) {
+      console.error('❌ No payment object found.');
+      return res.status(400).send('Missing payment object');
+    }
+
+    const note = payment.note;
 
     if (!note) {
-      console.error('❌ Missing payment note in webhook.');
+      console.error('❌ Missing payment note.');
       return res.status(400).send('Missing note');
     }
 
@@ -57,7 +61,7 @@ export default async function handler(req, res) {
 
     return res.status(200).send('Success');
   } catch (err) {
-    console.error('❌ Webhook error:', err);
+    console.error('❌ Webhook handler error:', err);
     return res.status(500).send('Internal Server Error');
   }
 }
