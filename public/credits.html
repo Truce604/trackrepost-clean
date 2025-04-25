@@ -67,6 +67,10 @@
     .buy-btn:hover {
       background-color: #e88a00;
     }
+    .coming-soon {
+      opacity: 0.5;
+      pointer-events: none;
+    }
   </style>
 </head>
 
@@ -90,10 +94,10 @@
         <button class="buy-btn" onclick="startCheckout(3499, 1000)">Buy 1000</button>
       </div>
 
-      <div class="credit-card">
+      <div class="credit-card coming-soon">
         <h2>2500 Credits</h2>
-        <p>💰 $79.99 CAD</p>
-        <button class="buy-btn" onclick="startCheckout(7999, 2500)">Buy 2500</button>
+        <p>💰 Coming Soon</p>
+        <button class="buy-btn" disabled>Coming Soon</button>
       </div>
     </div>
   </main>
@@ -138,5 +142,6 @@
   </script>
 </body>
 </html>
+
 
 
