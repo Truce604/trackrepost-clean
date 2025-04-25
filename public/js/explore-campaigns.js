@@ -24,10 +24,11 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       });
 
-      // ✅ Step 2: Get active campaigns with credits
+      // ✅ Step 2: Get active campaigns with credits > 0
       const campaignSnapshot = await db.collection("campaigns")
         .where("credits", ">", 0)
-        .orderBy("createdAt", "desc")
+        .orderBy("credits", "desc")  // ✅ Fix: first order by the inequality field
+        .orderBy("createdAt", "desc") // ✅ Secondary sort
         .get();
 
       container.innerHTML = "";
@@ -40,11 +41,11 @@ document.addEventListener("DOMContentLoaded", () => {
         // ❌ Skip own campaigns and already reposted ones
         if (data.userId === userId || repostedCampaignIds.has(id)) return;
 
-        // ✅ Create card
+        // ✅ Create campaign card
         const card = document.createElement("div");
         card.className = "campaign-card";
 
-        const image = data.artwork || "https://via.placeholder.com/90"; // fallback artwork
+        const image = data.artwork || "https://via.placeholder.com/90"; // fallback if no artwork
 
         card.innerHTML = `
           <img src="${image}" alt="Artwork">
@@ -63,7 +64,7 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
         `;
 
-        // 📝 Show/hide comment input
+        // 📝 Toggle comment input visibility
         const commentToggle = card.querySelector(`#commentToggle-${id}`);
         const commentInput = card.querySelector(`#commentInput-${id}`);
         commentToggle.addEventListener("change", () => {
@@ -75,7 +76,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       if (!foundAny) {
-        container.innerHTML = `<p>🎉 You've already reposted all available tracks. New campaigns coming soon!</p>`;
+        container.innerHTML = `<p>🎉 You've reposted all available tracks! New campaigns coming soon.</p>`;
       }
 
     } catch (err) {
