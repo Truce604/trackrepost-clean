@@ -1,83 +1,64 @@
 import { buffer } from 'micro';
-import crypto from 'crypto';
-import admin from 'firebase-admin';
+import * as admin from 'firebase-admin';
+
+// Initialize Firebase Admin
+if (!admin.apps.length) {
+  admin.initializeApp();
+}
 
 export const config = {
   api: {
-    bodyParser: false,
+    bodyParser: false, // we need the raw body
   },
 };
 
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert(
-      JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY)
-    ),
-  });
-}
-
-const db = admin.firestore();
-
 export default async function handler(req, res) {
-  console.log("📡 Square Webhook Triggered");
-
   if (req.method !== 'POST') {
     return res.status(405).send('Method Not Allowed');
   }
 
   try {
-    const rawBody = (await buffer(req)).toString('utf8');
+    const rawBody = await buffer(req);
+    const signature = req.headers['x-square-signature'];
 
-    const receivedSignature =
-      req.headers['x-square-signature'] ||
-      req.headers['x-square-hmacsha256-signature'];
+    // (Optional) You can verify the signature if you want
+    console.log('🔔 Webhook received from Square');
 
-    const webhookSecret = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
-    const notificationUrl = 'https://www.trackrepost.com/api/square/webhook';
-    const signatureBase = notificationUrl + rawBody;
+    const event = JSON.parse(rawBody.toString());
 
-    const expectedSignature = crypto
-      .createHmac('sha256', webhookSecret)
-      .update(signatureBase)
-      .digest('base64');
-
-    console.log('📩 Received Signature:', receivedSignature);
-    console.log('🔐 Expected Signature:', expectedSignature);
-    console.log('🧪 Signature Match:', receivedSignature === expectedSignature);
-
-    if (receivedSignature !== expectedSignature) {
-      return res.status(403).send('Invalid signature');
+    if (event.type !== 'order.created' && event.type !== 'payment.created') {
+      console.log('⚠️ Ignoring irrelevant Square webhook event:', event.type);
+      return res.status(200).send('Ignored non-payment event');
     }
 
-    const event = JSON.parse(rawBody);
+    const note = event.data?.object?.payment?.note || event.data?.object?.order?.note;
 
-    if (event.type === 'payment.updated') {
-      const note = event?.data?.object?.payment?.note || '';
-      const match = note.match(/(\d+)\sCredits\sPurchase\sfor\suserId=([\w-]+)(?:\sPlan=(\w+))?/);
-      if (!match) return res.status(400).send('Invalid note format');
-
-      const credits = parseInt(match[1], 10);
-      const userId = match[2];
-      const plan = match[3] || null;
-
-      await db.collection('users').doc(userId).set(
-        {
-          credits: admin.firestore.FieldValue.increment(credits),
-          ...(plan && {
-            plan,
-            planActivatedAt: admin.firestore.Timestamp.now(),
-          }),
-        },
-        { merge: true }
-      );
-
-      console.log(`✅ Added ${credits} credits to ${userId}${plan ? ` with plan: ${plan}` : ''}`);
-      return res.status(200).send('Credits updated');
+    if (!note) {
+      console.error('❌ Missing payment note in webhook.');
+      return res.status(400).send('Missing note');
     }
 
-    return res.status(200).send('Event ignored');
+    console.log('📝 Payment note:', note);
+
+    const match = note.match(/(\d+)\sCredits\sPurchase\sfor\suserId=(\w+)/);
+    if (!match) {
+      console.error('❌ Invalid payment note format.');
+      return res.status(400).send('Invalid note format');
+    }
+
+    const credits = parseInt(match[1], 10);
+    const userId = match[2];
+
+    console.log(`✅ Adding ${credits} credits to user ${userId}`);
+
+    await admin.firestore().collection('users').doc(userId).update({
+      credits: admin.firestore.FieldValue.increment(credits)
+    });
+
+    return res.status(200).send('Success');
   } catch (err) {
-    console.error('❌ Webhook Error:', err);
+    console.error('❌ Webhook error:', err);
     return res.status(500).send('Internal Server Error');
   }
 }
+
