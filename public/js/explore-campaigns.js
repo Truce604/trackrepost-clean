@@ -45,13 +45,19 @@ document.addEventListener("DOMContentLoaded", () => {
         const card = document.createElement("div");
         card.className = "campaign-card";
 
-        const artworkUrl = data.artwork || "https://i1.sndcdn.com/artworks-000000000000-000000-t500x500.jpg";
-
         card.innerHTML = `
-          <img src="${artworkUrl}" alt="Artwork">
+          <div class="soundcloud-embed">
+            <iframe 
+              width="100%" 
+              height="120" 
+              scrolling="no" 
+              frameborder="no" 
+              allow="autoplay" 
+              src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.trackUrl)}&color=%23ff5500&inverse=false&auto_play=false&show_user=true&show_artwork=true&show_comments=false&visual=false">
+            </iframe>
+          </div>
           <div class="campaign-details">
             <h3>${data.title || "Untitled"}</h3>
-            <p><strong>Artist:</strong> ${data.artist || "Unknown"}</p>
             <p><strong>Genre:</strong> ${data.genre || "N/A"}</p>
             <p><strong>Credits:</strong> ${data.credits}</p>
             <a href="repost-action.html?id=${id}" class="repost-btn">🔁 Repost</a>
@@ -72,5 +78,3 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
-
-
