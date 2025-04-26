@@ -63,13 +63,10 @@
       font-weight: bold;
       margin-top: 10px;
       text-decoration: none;
+      display: inline-block;
     }
     .buy-btn:hover {
       background-color: #e88a00;
-    }
-    .coming-soon {
-      opacity: 0.5;
-      pointer-events: none;
     }
   </style>
 </head>
@@ -91,13 +88,19 @@
       <div class="credit-card">
         <h2>1000 Credits</h2>
         <p>💰 $34.99 CAD</p>
-        <button class="buy-btn" onclick="startCheckout(3499, 1000)">Buy 1000</button>
+        <a href="https://square.link/u/xIcjDvkN" target="_blank" class="buy-btn">Buy 1000</a>
       </div>
 
-      <div class="credit-card coming-soon">
+      <div class="credit-card">
         <h2>2500 Credits</h2>
-        <p>💰 Coming Soon</p>
-        <button class="buy-btn" disabled>Coming Soon</button>
+        <p>💰 $79.99 CAD</p>
+        <a href="https://square.link/u/2UA8zQ5D" target="_blank" class="buy-btn">Buy 2500</a>
+      </div>
+
+      <div class="credit-card">
+        <h2>5000 Credits</h2>
+        <p>💰 $139.99 CAD</p>
+        <a href="https://square.link/u/xIcjDvkN" target="_blank" class="buy-btn">Buy 5000</a>
       </div>
     </div>
   </main>
@@ -121,7 +124,7 @@
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            amount: parseInt(amount),  // 🔥 FORCE INTEGER
+            amount: parseInt(amount),
             credits,
             userId: user.uid,
           }),
@@ -142,6 +145,4 @@
   </script>
 </body>
 </html>
-
-
 
