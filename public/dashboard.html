@@ -2,175 +2,111 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Dashboard - TrackRepost</title>
-
-  <!-- ✅ Meta -->
-  <link rel="icon" href="/favicon.ico" />
-  <meta name="description" content="Check your credits, badges, and campaign status on TrackRepost — the easiest way to grow on SoundCloud.">
-  <meta property="og:title" content="TrackRepost Dashboard" />
-  <meta property="og:description" content="Manage your campaigns, view credits, and grow your SoundCloud reach with TrackRepost.">
-  <meta property="og:image" content="/images/track-repost-logo.png" />
-  <meta property="og:url" content="https://www.trackrepost.com/dashboard.html" />
-  <meta name="theme-color" content="#0d0d0d" />
-
-  <!-- ✅ Styles + Firebase Compat -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🏠 Dashboard | TrackRepost</title>
   <link rel="stylesheet" href="styles.css" />
+
+  <!-- Firebase SDKs (ONLY ONCE) -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+  <!-- Firebase Config + Init -->
   <script src="/js/firebaseConfig.js"></script>
   <script src="/js/firebase-init.js"></script>
 
+  <!-- Header + Dashboard Scripts -->
+  <script type="module" src="/js/header.js"></script>
+  <script src="/js/dashboard.js" defer></script>
+
   <style>
     body {
-      background-color: #0d0d0d;
+      background-color: #111;
       color: #fff;
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding: 40px 20px;
+      font-family: 'Segoe UI', sans-serif;
+      padding: 20px;
     }
-
-    .dashboard-card {
-      background-color: #121212;
-      border-radius: 16px;
-      padding: 30px;
-      max-width: 600px;
-      margin: 0 auto;
-      box-shadow: 0 0 10px rgba(0,0,0,0.4);
-    }
-
     h1 {
-      font-size: 1.8rem;
+      color: #ff9900;
+      text-align: center;
+    }
+    .dashboard-info {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .badge {
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: bold;
+      display: inline-block;
+      margin-top: 10px;
+    }
+    .badge.pro {
+      background: #ff9900;
+      color: black;
+    }
+    .badge.free {
+      background: gray;
+      color: white;
+    }
+    .campaign-card {
+      background: #1c1c1c;
+      padding: 20px;
+      margin: 20px auto;
+      border-radius: 10px;
+      max-width: 600px;
+      box-shadow: 0 0 10px rgba(255, 153, 0, 0.3);
+    }
+    .campaign-card img {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      border-radius: 8px;
       margin-bottom: 10px;
     }
-
-    .user-email {
-      font-size: 1rem;
-      color: #aaa;
-      margin-bottom: 15px;
-    }
-
-    .credits {
-      font-size: 1.2rem;
-      margin: 10px 0;
-    }
-
-    .badge {
-      margin: 10px 0;
-      font-size: 1.1rem;
-      font-weight: bold;
-      color: #ffa500;
-    }
-
-    .logout {
-      margin-top: 20px;
-      background: #ffa500;
+    .button {
+      display: inline-block;
+      margin-top: 10px;
       padding: 10px 20px;
-      border-radius: 8px;
+      background-color: #ff9900;
       color: black;
+      border-radius: 8px;
+      text-decoration: none;
       font-weight: bold;
-      cursor: pointer;
-      border: none;
     }
-
-    .logout:hover {
-      background: #ffbe40;
+    .button:hover {
+      background-color: #e88a00;
     }
-
-    .campaign-list {
-      margin-top: 30px;
-      text-align: left;
-    }
-
-    .campaign {
-      background: #1e1e1e;
-      margin-bottom: 15px;
-      padding: 15px;
-      border-radius: 12px;
-    }
-
-    .campaign h3 {
-      margin: 0;
-      font-size: 1.1rem;
-    }
-
-    .campaign p {
-      font-size: 0.9rem;
-      margin: 5px 0;
-      color: #ccc;
-    }
-
-    a {
-      color: #ffa500;
+    footer {
+      text-align: center;
+      margin-top: 40px;
+      font-size: 14px;
+      color: #777;
     }
   </style>
 </head>
+
 <body>
   <div id="site-header"></div>
 
-  <div class="dashboard-card">
-    <h1>📊 Dashboard</h1>
-    <p class="user-email" id="user-email">Loading...</p>
-    <p class="credits" id="user-credits">Credits: --</p>
-    <p class="badge" id="user-badge">Badge: 🟢 Rookie</p>
+  <main>
+    <h1>🏠 Dashboard</h1>
 
-    <div id="campaign-list" class="campaign-list"></div>
+    <div class="dashboard-info">
+      <h2 id="userInfo">Loading...</h2>
+      <p id="creditBalance">Loading credits...</p>
+      <div id="planBadge"></div>
+      <button id="logout-btn" class="button" style="margin-top: 20px;">Log Out</button>
+    </div>
 
-    <button class="logout" onclick="logout()">Logout</button>
-  </div>
+    <div id="campaigns">
+      <p style="text-align: center;">Loading your campaigns...</p>
+    </div>
+  </main>
 
-  <script>
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-
-    auth.onAuthStateChanged(async (user) => {
-      if (!user) {
-        window.location.href = "index.html";
-        return;
-      }
-
-      document.getElementById("user-email").textContent = user.email;
-
-      const userRef = db.collection("users").doc(user.uid);
-      const userSnap = await userRef.get();
-      const userData = userSnap.data() || {};
-
-      document.getElementById("user-credits").textContent = `Credits: ${userData.credits || 0}`;
-
-      const badge = userData.badge || { name: "Rookie", emoji: "🟢" };
-      document.getElementById("user-badge").textContent = `Badge: ${badge.emoji} ${badge.name}`;
-
-      const campaignList = document.getElementById("campaign-list");
-      const campaignsSnap = await db.collection("campaigns")
-        .where("userId", "==", user.uid)
-        .get();
-
-      if (campaignsSnap.empty) {
-        campaignList.innerHTML = "<p>No campaigns found.</p>";
-        return;
-      }
-
-      campaignsSnap.forEach(doc => {
-        const data = doc.data();
-        const div = document.createElement("div");
-        div.className = "campaign";
-        div.innerHTML = `
-          <h3>🎵 ${data.title || "Untitled"}</h3>
-          <p>💳 ${data.credits} credits remaining</p>
-          <p><a href="${data.trackUrl}" target="_blank">🔗 View on SoundCloud</a></p>
-        `;
-        campaignList.appendChild(div);
-      });
-    });
-
-    function logout() {
-      auth.signOut().then(() => {
-        window.location.href = "index.html";
-      });
-    }
-  </script>
-
-  <script type="module" src="/js/header.js"></script>
+  <footer>
+    <p>© 2025 TrackRepost. All rights reserved.</p>
+  </footer>
 </body>
 </html>
