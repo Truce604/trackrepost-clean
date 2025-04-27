@@ -7,7 +7,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   auth.onAuthStateChanged(async (user) => {
     if (!user) {
-      userInfo.textContent = "⚠️ Please log in to view your dashboard.";
+      userInfo.textContent = "⚠️ Please sign in to view your dashboard.";
       return;
     }
 
@@ -19,7 +19,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const credits = userData.credits || 0;
     const plan = userData.plan || "free";
 
-    // ✅ Show user info
+    // ✅ Display user info
     userInfo.textContent = `Welcome, ${user.displayName || "User"}!`;
     creditDisplay.textContent = `${credits} credits`;
 
@@ -47,7 +47,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const div = document.createElement("div");
         div.className = "campaign-card";
         div.innerHTML = `
-          <img src="${artwork}" alt="Artwork" style="width:100%; height:200px; object-fit:cover; border-radius:8px;">
+          <img src="${artwork}" alt="Artwork">
           <h3>${data.title || "Untitled"}</h3>
           <p>🎧 ${data.artist || "Unknown Artist"}</p>
           <p>🎵 Genre: ${data.genre || "N/A"}</p>
@@ -71,6 +71,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
+
 
 
 
