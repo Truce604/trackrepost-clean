@@ -7,6 +7,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const commentToggle = document.getElementById("commentBoxToggle");
   const commentBox = document.getElementById("commentText");
   const submitBtn = document.getElementById("submitRepost");
+  const db = firebase.firestore();
 
   firebase.auth().onAuthStateChanged(async (user) => {
     if (!user) {
@@ -14,95 +15,94 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const campaignId = urlParams.get("id");
-
+    const campaignId = new URLSearchParams(window.location.search).get("id");
     if (!campaignId) {
       titleEl.textContent = "❌ Campaign not found.";
       return;
     }
 
-    console.log("✅ Current user:", user.uid);
-    console.log("✅ Loading campaign ID:", campaignId);
-
+    // Load campaign
+    let campaign;
     try {
-      const campaignDoc = await firebase.firestore()
-        .collection("campaigns")
-        .doc(campaignId)
-        .get();
+      const doc = await db.collection("campaigns").doc(campaignId).get();
+      if (!doc.exists) throw new Error("not found");
+      campaign = doc.data();
+    } catch (e) {
+      console.error("❌ CAMPAIGN READ ERROR:", e);
+      titleEl.textContent = "❌ Failed to load campaign.";
+      return;
+    }
 
-      if (!campaignDoc.exists) {
-        throw new Error("Campaign not found in Firestore");
-      }
+    // Prevent self-repost
+    if (campaign.userId === user.uid) {
+      titleEl.textContent = "🚫 You can't repost your own campaign.";
+      return;
+    }
 
-      const campaign = campaignDoc.data();
+    // Show info
+    titleEl.textContent = campaign.title || "Untitled Track";
+    infoEl.innerHTML = `
+      <p><strong>Artist:</strong> ${campaign.artist}</p>
+      <p><strong>Genre:</strong> ${campaign.genre}</p>
+      <p><strong>Credits Left:</strong> ${campaign.credits}</p>
+      <iframe src="https://w.soundcloud.com/player/?url=${encodeURIComponent(campaign.trackUrl)}"
+        width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"></iframe>
+    `;
+    actionsEl.style.display = "block";
 
-      if (campaign.userId === user.uid) {
-        titleEl.textContent = "🚫 You can't repost your own campaign.";
-        return;
-      }
+    // Toggle comment box
+    commentToggle.onchange = () => {
+      commentBox.style.display = commentToggle.checked ? "block" : "none";
+    };
 
-      titleEl.textContent = campaign.title || "Untitled Track";
-      infoEl.innerHTML = `
-        <p><strong>Artist:</strong> ${campaign.artist || "Unknown"}</p>
-        <p><strong>Genre:</strong> ${campaign.genre || "N/A"}</p>
-        <p><strong>Credits Available:</strong> ${campaign.credits || 0}</p>
-        <iframe scrolling="no" frameborder="no" allow="autoplay"
-          src="https://w.soundcloud.com/player/?url=${encodeURIComponent(campaign.trackUrl)}&color=%23ff9900&auto_play=false&show_user=true"
-          width="100%" height="166"></iframe>
-      `;
+    // Submit
+    submitBtn.onclick = async () => {
+      const likeCredit = likeEl.checked ? 1 : 0;
+      const commentCredit = (commentToggle.checked && commentBox.value.trim()) ? 2 : 0;
+      const earned = 1 + likeCredit + commentCredit;
 
-      actionsEl.style.display = "block";
-
-      commentToggle.addEventListener("change", () => {
-        commentBox.style.display = commentToggle.checked ? "block" : "none";
-      });
-
-      submitBtn.onclick = async () => {
-        const likeCredits = likeEl.checked ? 1 : 0;
-        const commentCredits = (commentToggle.checked && commentBox.value.trim()) ? 2 : 0;
-        const totalCreditsEarned = 1 + likeCredits + commentCredits; // 1 credit for repost always
-
-        if (campaign.credits < totalCreditsEarned) {
-          alert("⚠️ Not enough campaign credits left to reward you!");
-          return;
-        }
-
-        const repostId = `${user.uid}_${campaignId}`;
-
-        await firebase.firestore().collection("reposts").doc(repostId).set({
+      // 1) Write repost
+      try {
+        await db.collection("reposts").doc(`${user.uid}_${campaignId}`).set({
           userId: user.uid,
-          campaignId: campaignId,
+          campaignId,
           trackUrl: campaign.trackUrl,
           liked: likeEl.checked,
           comment: commentBox.value.trim() || null,
           timestamp: firebase.firestore.FieldValue.serverTimestamp(),
           prompted: false
         });
+        console.log("✅ Repost doc created");
+      } catch (e) {
+        console.error("❌ REPOST.CREATE ERROR:", e);
+      }
 
-        // Update user credits
-        await firebase.firestore().collection("users").doc(user.uid).update({
-          credits: firebase.firestore.FieldValue.increment(totalCreditsEarned)
+      // 2) Update user credits
+      try {
+        await db.collection("users").doc(user.uid).update({
+          credits: firebase.firestore.FieldValue.increment(earned)
         });
+        console.log("✅ User credits updated");
+      } catch (e) {
+        console.error("❌ USER.UPDATE ERROR:", e);
+      }
 
-        // Deduct campaign credits
-        await firebase.firestore().collection("campaigns").doc(campaignId).update({
-          credits: firebase.firestore.FieldValue.increment(-totalCreditsEarned)
+      // 3) Deduct campaign credits
+      try {
+        await db.collection("campaigns").doc(campaignId).update({
+          credits: firebase.firestore.FieldValue.increment(-earned)
         });
+        console.log("✅ Campaign credits decremented");
+      } catch (e) {
+        console.error("❌ CAMPAIGN.UPDATE ERROR:", e);
+      }
 
-        console.log(`✅ Repost successful. Earned ${totalCreditsEarned} credits.`);
-
-        messageEl.textContent = `🎉 Repost successful! You earned ${totalCreditsEarned} credits.`;
-        actionsEl.style.display = "none";
-      };
-
-    } catch (error) {
-      console.error("❌ Error loading campaign:", error);
-      titleEl.textContent = "❌ Failed to load campaign.";
-      infoEl.innerHTML = "";
-    }
+      messageEl.textContent = `🎉 You earned ${earned} credits!`;
+      actionsEl.style.display = "none";
+    };
   });
 });
+
 
 
 
