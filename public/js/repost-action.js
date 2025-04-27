@@ -1,7 +1,4 @@
-firebase.auth().onAuthStateChanged(async (user) => {
-  const urlParams = new URLSearchParams(window.location.search);
-  const campaignId = urlParams.get("id");
-
+document.addEventListener("DOMContentLoaded", () => {
   const titleEl = document.getElementById("campaignTitle");
   const infoEl = document.getElementById("campaignInfo");
   const actionsEl = document.getElementById("repostActions");
@@ -11,92 +8,100 @@ firebase.auth().onAuthStateChanged(async (user) => {
   const commentBox = document.getElementById("commentText");
   const submitBtn = document.getElementById("submitRepost");
 
-  if (!user) {
-    titleEl.textContent = "Please sign in.";
-    return;
-  }
-
-  try {
-    const campaignDoc = await firebase.firestore().collection("campaigns").doc(campaignId).get();
-    if (!campaignDoc.exists) throw new Error("Campaign not found");
-    const campaign = campaignDoc.data();
-
-    if (campaign.userId === user.uid) {
-      titleEl.textContent = "🚫 You can't repost your own campaign.";
+  firebase.auth().onAuthStateChanged(async (user) => {
+    if (!user) {
+      titleEl.textContent = "⚠️ Please sign in to repost.";
       return;
     }
 
-    const repostId = `${user.uid}_${campaignId}`;
-    const repostDoc = await firebase.firestore().collection("reposts").doc(repostId).get();
-    if (repostDoc.exists) {
-      titleEl.textContent = "⛔ You've already reposted this track.";
+    const urlParams = new URLSearchParams(window.location.search);
+    const campaignId = urlParams.get("id");
+
+    if (!campaignId) {
+      titleEl.textContent = "❌ Campaign not found.";
       return;
     }
 
-    // Show campaign info
-    titleEl.textContent = campaign.title || "Untitled";
-    infoEl.innerHTML = `
-      <p><strong>Artist:</strong> ${campaign.artist || "Unknown"}</p>
-      <p><strong>Genre:</strong> ${campaign.genre || "N/A"}</p>
-      <p><strong>Credits Available:</strong> ${campaign.credits}</p>
-      <iframe scrolling="no" frameborder="no" allow="autoplay"
-        src="https://w.soundcloud.com/player/?url=${encodeURIComponent(campaign.trackUrl)}&color=%23ff5500&auto_play=false&show_user=true"
-        width="100%" height="166"></iframe>
-    `;
+    console.log("✅ Current user:", user.uid);
+    console.log("✅ Loading campaign ID:", campaignId);
 
-    actionsEl.style.display = "block";
+    try {
+      const campaignDoc = await firebase.firestore()
+        .collection("campaigns")
+        .doc(campaignId)
+        .get();
 
-    // Comment toggle
-    commentToggle.addEventListener("change", () => {
-      commentBox.style.display = commentToggle.checked ? "block" : "none";
-    });
+      if (!campaignDoc.exists) {
+        throw new Error("Campaign not found in Firestore");
+      }
 
-    // Submit handler
-    submitBtn.onclick = async () => {
-      const comment = commentToggle.checked ? commentBox.value.trim() : "";
-      const likeChecked = likeEl.checked;
+      const campaign = campaignDoc.data();
 
-      // 💰 Credits logic
-      let creditsEarned = 1; // base for repost
-      if (likeChecked) creditsEarned += 1;
-      if (comment) creditsEarned += 2;
-
-      // ❌ Not enough credits in campaign
-      if (campaign.credits < creditsEarned) {
-        messageEl.textContent = "❌ This campaign doesn’t have enough credits left.";
+      if (campaign.userId === user.uid) {
+        titleEl.textContent = "🚫 You can't repost your own campaign.";
         return;
       }
 
-      // 🔥 Create repost
-      await firebase.firestore().collection("reposts").doc(repostId).set({
-        userId: user.uid,
-        campaignId,
-        trackUrl: campaign.trackUrl,
-        liked: likeChecked,
-        comment: comment || null,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-        prompted: false
+      titleEl.textContent = campaign.title || "Untitled Track";
+      infoEl.innerHTML = `
+        <p><strong>Artist:</strong> ${campaign.artist || "Unknown"}</p>
+        <p><strong>Genre:</strong> ${campaign.genre || "N/A"}</p>
+        <p><strong>Credits Available:</strong> ${campaign.credits || 0}</p>
+        <iframe scrolling="no" frameborder="no" allow="autoplay"
+          src="https://w.soundcloud.com/player/?url=${encodeURIComponent(campaign.trackUrl)}&color=%23ff9900&auto_play=false&show_user=true"
+          width="100%" height="166"></iframe>
+      `;
+
+      actionsEl.style.display = "block";
+
+      commentToggle.addEventListener("change", () => {
+        commentBox.style.display = commentToggle.checked ? "block" : "none";
       });
 
-      // 💸 Credit updates
-      await firebase.firestore().collection("users").doc(user.uid).update({
-        credits: firebase.firestore.FieldValue.increment(creditsEarned)
-      });
+      submitBtn.onclick = async () => {
+        const likeCredits = likeEl.checked ? 1 : 0;
+        const commentCredits = (commentToggle.checked && commentBox.value.trim()) ? 2 : 0;
+        const totalCreditsEarned = 1 + likeCredits + commentCredits; // 1 credit for repost always
 
-      await firebase.firestore().collection("campaigns").doc(campaignId).update({
-        credits: firebase.firestore.FieldValue.increment(-creditsEarned)
-      });
+        if (campaign.credits < totalCreditsEarned) {
+          alert("⚠️ Not enough campaign credits left to reward you!");
+          return;
+        }
 
-      // 🎉 Confirmation
-      messageEl.textContent = `🎉 Repost successful! You earned ${creditsEarned} credits.`;
-      actionsEl.style.display = "none";
-    };
+        const repostId = `${user.uid}_${campaignId}`;
 
-  } catch (err) {
-    console.error("❌ Error loading campaign:", err);
-    titleEl.textContent = "❌ Failed to load campaign.";
-    infoEl.innerHTML = "";
-  }
+        await firebase.firestore().collection("reposts").doc(repostId).set({
+          userId: user.uid,
+          campaignId: campaignId,
+          trackUrl: campaign.trackUrl,
+          liked: likeEl.checked,
+          comment: commentBox.value.trim() || null,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+          prompted: false
+        });
+
+        // Update user credits
+        await firebase.firestore().collection("users").doc(user.uid).update({
+          credits: firebase.firestore.FieldValue.increment(totalCreditsEarned)
+        });
+
+        // Deduct campaign credits
+        await firebase.firestore().collection("campaigns").doc(campaignId).update({
+          credits: firebase.firestore.FieldValue.increment(-totalCreditsEarned)
+        });
+
+        console.log(`✅ Repost successful. Earned ${totalCreditsEarned} credits.`);
+
+        messageEl.textContent = `🎉 Repost successful! You earned ${totalCreditsEarned} credits.`;
+        actionsEl.style.display = "none";
+      };
+
+    } catch (error) {
+      console.error("❌ Error loading campaign:", error);
+      titleEl.textContent = "❌ Failed to load campaign.";
+      infoEl.innerHTML = "";
+    }
+  });
 });
 
 
