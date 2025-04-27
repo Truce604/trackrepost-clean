@@ -1,43 +1,48 @@
+// /js/notifications.js
+
 document.addEventListener("DOMContentLoaded", () => {
   const container = document.getElementById("notificationsList");
+  const db = firebase.firestore();
 
   firebase.auth().onAuthStateChanged(async (user) => {
     if (!user) {
-      container.innerHTML = `<p style="text-align: center;">⚠️ Please sign in to view notifications.</p>`;
+      container.innerHTML = `<p>⚠️ Please sign in to view notifications.</p>`;
       return;
     }
 
-    const db = firebase.firestore();
-    const userId = user.uid;
-
     try {
-      const snapshot = await db.collection("notifications")
-        .where("userId", "==", userId)
+      // Fetch this user's notifications, newest first
+      const snap = await db.collection("notifications")
+        .where("userId", "==", user.uid)
         .orderBy("timestamp", "desc")
         .get();
 
-      container.innerHTML = "";
-      if (snapshot.empty) {
-        container.innerHTML = `<p style="text-align: center;">🎉 No notifications yet.</p>`;
+      if (snap.empty) {
+        container.innerHTML = `<p>🎉 No notifications yet.</p>`;
         return;
       }
 
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        const notif = document.createElement("div");
-        notif.className = "notification";
-        notif.innerHTML = `
-          <h3>${data.title}</h3>
-          <p>${data.message}</p>
-          <div class="timestamp">${data.timestamp.toDate().toLocaleString()}</div>
+      // Clear and render each notification
+      container.innerHTML = "";
+      snap.forEach(doc => {
+        const n = doc.data();
+        // build a human-readable timestamp
+        const ts = n.timestamp?.toDate().toLocaleString() || "";
+        // choose a message based on your fields
+        // for example: someone reposted your campaign
+        const message = `
+          <div class="notification-card">
+            <p><strong>${n.artist}</strong> — <em>${n.title}</em></p>
+            <p>Campaign <code>${n.campaignId}</code> now has <strong>${n.remainingCredits}</strong> credits</p>
+            <p><small>${ts}</small></p>
+          </div>
         `;
-        container.appendChild(notif);
+        container.insertAdjacentHTML("beforeend", message);
       });
 
-    } catch (err) {
-      console.error("❌ Error loading notifications:", err);
-      container.innerHTML = `<p style="text-align: center;">❌ Failed to load notifications.</p>`;
+    } catch (e) {
+      console.error("❌ Error loading notifications:", e);
+      container.innerHTML = `<p>❌ Failed to load notifications.</p>`;
     }
   });
 });
-
