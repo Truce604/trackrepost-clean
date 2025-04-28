@@ -1,48 +1,39 @@
-firebase.auth().onAuthStateChanged(async (user) => {
-  if (!user) return;
+const db = firebase.firestore();
+const campaignsContainer = document.getElementById("campaigns"); // 🔥 Your container div
 
-  const campaignContainer = document.getElementById("campaigns");
-  campaignContainer.innerHTML = "Loading campaigns...";
-
+async function loadCampaigns() {
   try {
-    const querySnapshot = await firebase.firestore()
-      .collection("campaigns")
-      .where("active", "==", true)
-      .orderBy("credits", "desc")
-      .orderBy("createdAt", "desc")
-      .limit(50)
-      .get();
+    const snapshot = await db.collection("campaigns").orderBy("createdAt", "desc").get();
 
-    if (querySnapshot.empty) {
-      campaignContainer.innerHTML = "<p>No campaigns available.</p>";
+    if (snapshot.empty) {
+      campaignsContainer.innerHTML = "<p>No campaigns available.</p>";
       return;
     }
 
-    campaignContainer.innerHTML = "";
+    snapshot.forEach(doc => {
+      const campaign = doc.data();
+      const campaignId = doc.id;
 
-    querySnapshot.forEach((doc) => {
-      const data = doc.data();
       const card = document.createElement("div");
       card.className = "campaign-card";
 
       card.innerHTML = `
-        <img src="${data.artworkUrl || '/images/default-art.png'}" alt="Track Art" class="artwork" />
-        <div class="campaign-info">
-          <h3>${data.artist || 'Unknown Artist'}</h3>
-          <p><strong>Track:</strong> ${data.title || 'Untitled'}</p>
-          <p><strong>Genre:</strong> ${data.genre || 'N/A'}</p>
-          <p><strong>Credits:</strong> ${data.credits}</p>
-          <a href="repost-action.html?campaignId=${doc.id}" class="button">🔥 Repost This</a>
-        </div>
+        <h3>${campaign.title || "Untitled Track"}</h3>
+        <p><strong>Artist:</strong> ${campaign.artist || "Unknown"}</p>
+        <p><strong>Genre:</strong> ${campaign.genre || "Unknown"}</p>
+        <p><strong>Credits:</strong> ${campaign.credits || 0}</p>
+        <a href="repost-action.html?campaignId=${campaignId}" class="button">🎵 Repost This Track</a>
       `;
 
-      campaignContainer.appendChild(card);
+      campaignsContainer.appendChild(card);
     });
-
   } catch (error) {
     console.error("Error loading campaigns:", error);
-    campaignContainer.innerHTML = `<p>Error loading campaigns: ${error.message}</p>`;
+    campaignsContainer.innerHTML = "<p>Failed to load campaigns.</p>";
   }
-});
+}
+
+// ✅ Auto-load campaigns when page loads
+document.addEventListener("DOMContentLoaded", loadCampaigns);
 
 
