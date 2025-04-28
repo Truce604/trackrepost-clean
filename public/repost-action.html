@@ -10,7 +10,9 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-functions.js"></script>
 
+  <!-- Your Config and Initialization -->
   <script src="/js/firebaseConfig.js"></script>
   <script src="/js/firebase-init.js"></script>
 </head>
@@ -18,13 +20,21 @@
   <div class="container">
     <h1 id="campaignTitle">Loading...</h1>
     <div id="campaignInfo"></div>
+
     <div id="repostActions" style="display:none;">
       <label><input type="checkbox" id="likeTrack" checked /> Like Track (1 credit)</label><br>
       <label><input type="checkbox" id="commentBoxToggle" /> Leave a Comment (2 credits)</label><br>
       <textarea id="commentText" style="display:none;" placeholder="Enter comment..."></textarea><br>
       <button id="submitRepost">✅ Confirm Repost</button>
     </div>
+
     <p id="message"></p>
+
+    <!-- 🎛️ Radio loading + sound -->
+    <div id="radioLoading" style="display:none; margin-top:20px;">
+      <img src="/images/radio-dial.png" alt="Tuning..." style="width:50px; animation: radio-spin 1s infinite alternate;">
+      <audio id="radioSound" src="/sounds/radio-static.wav" preload="auto"></audio>
+    </div>
   </div>
 
   <script src="/js/repost-action.js"></script>
