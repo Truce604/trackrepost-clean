@@ -217,3 +217,8 @@ footer {
   font-size: 14px;
   margin-top: 10px;
 }
+/* RADIO DIAL SPIN */
+@keyframes radio-spin {
+  0% { transform: rotate(-10deg); }
+  100% { transform: rotate(10deg); }
+}
