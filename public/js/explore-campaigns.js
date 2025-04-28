@@ -1,80 +1,53 @@
-document.addEventListener("DOMContentLoaded", () => {
-  const container = document.getElementById("campaignList");
+// ✅ Initialize Firestore
+const db = firebase.firestore();
+const campaignList = document.getElementById("campaignList");
 
-  firebase.auth().onAuthStateChanged(async (user) => {
-    if (!user) {
-      container.innerHTML = `<p>⚠️ Please log in to explore campaigns.</p>`;
+// ✅ Load campaigns
+async function loadCampaigns() {
+  try {
+    const snapshot = await db.collection("campaigns").orderBy("createdAt", "desc").get();
+
+    if (snapshot.empty) {
+      campaignList.innerHTML = "<p>No campaigns found.</p>";
       return;
     }
 
-    const db = firebase.firestore();
-    const userId = user.uid;
+    campaignList.innerHTML = ""; // Clear loading text
 
-    try {
-      // ✅ Step 1: Get all reposts by user
-      const repostsSnapshot = await db.collection("reposts")
-        .where("userId", "==", userId)
-        .get();
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      const campaignId = doc.id;
 
-      const repostedCampaignIds = new Set();
-      repostsSnapshot.forEach(doc => {
-        const data = doc.data();
-        if (data.campaignId) {
-          repostedCampaignIds.add(data.campaignId);
-        }
-      });
+      const card = document.createElement("div");
+      card.className = "campaign-card";
 
-      // ✅ Step 2: Get active campaigns with credits > 0
-      const campaignSnapshot = await db.collection("campaigns")
-        .where("credits", ">", 0)
-        .orderBy("credits", "desc")
-        .orderBy("createdAt", "desc")
-        .get();
+      card.innerHTML = `
+        <div class="soundcloud-embed">
+          <iframe
+            width="100%" 
+            height="166" 
+            scrolling="no" 
+            frameborder="no" 
+            allow="autoplay"
+            src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.trackUrl || '')}">
+          </iframe>
+        </div>
+        <div class="campaign-details">
+          <h3>${data.title || "Untitled Track"}</h3>
+          <p><strong>Artist:</strong> ${data.artist || "Unknown"}</p>
+          <p><strong>Genre:</strong> ${data.genre || "Unknown"}</p>
+          <p><strong>Credits:</strong> ${data.credits || 0}</p>
+          <a href="repost-action.html?campaignId=${campaignId}" class="repost-btn">🎵 Repost This</a>
+        </div>
+      `;
 
-      container.innerHTML = "";
-      let foundAny = false;
+      campaignList.appendChild(card);
+    });
+  } catch (error) {
+    console.error("Error loading campaigns:", error);
+    campaignList.innerHTML = "<p>Failed to load campaigns.</p>";
+  }
+}
 
-      campaignSnapshot.forEach(doc => {
-        const data = doc.data();
-        const id = doc.id;
-
-        // ❌ Skip own campaigns and already reposted ones
-        if (data.userId === userId || repostedCampaignIds.has(id)) return;
-
-        // ✅ Build card
-        const card = document.createElement("div");
-        card.className = "campaign-card";
-
-        card.innerHTML = `
-          <div class="soundcloud-embed">
-            <iframe 
-              width="100%" 
-              height="120" 
-              scrolling="no" 
-              frameborder="no" 
-              allow="autoplay" 
-              src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.trackUrl)}&color=%23ff5500&inverse=false&auto_play=false&show_user=true&show_artwork=true&show_comments=false&visual=false">
-            </iframe>
-          </div>
-          <div class="campaign-details">
-            <h3>${data.title || "Untitled"}</h3>
-            <p><strong>Genre:</strong> ${data.genre || "N/A"}</p>
-            <p><strong>Credits:</strong> ${data.credits}</p>
-            <a href="repost-action.html?id=${id}" class="repost-btn">🔁 Repost</a>
-          </div>
-        `;
-
-        container.appendChild(card);
-        foundAny = true;
-      });
-
-      if (!foundAny) {
-        container.innerHTML = `<p>🎉 You've reposted all available tracks! New campaigns coming soon.</p>`;
-      }
-
-    } catch (err) {
-      console.error("❌ Error loading campaigns:", err);
-      container.innerHTML = `<p>❌ Failed to load campaigns. Please try again later.</p>`;
-    }
-  });
-});
+// ✅ Auto load on page ready
+document.addEventListener("DOMContentLoaded", loadCampaigns);
