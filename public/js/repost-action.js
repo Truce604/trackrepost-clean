@@ -11,6 +11,15 @@ const radioSound = document.getElementById("radioSound"); // 🎶 Static sound
 // ✅ Initialize Firebase Functions
 const functions = firebase.app().functions("us-central1");
 
+// ✅ Get campaignId from URL
+const urlParams = new URLSearchParams(window.location.search);
+const campaignId = urlParams.get('campaignId');
+
+if (!campaignId) {
+  alert("Missing campaignId! Cannot repost.");
+  throw new Error("Missing campaignId in URL.");
+}
+
 // ✅ Handle submit click
 submitBtn.onclick = async () => {
   const liked = likeEl.checked;
@@ -18,9 +27,9 @@ submitBtn.onclick = async () => {
 
   // 🔥 Show radio dial + play static sound
   radioLoading.style.display = "block";
-  radioSound.currentTime = 0; // Reset to start
-  radioSound.play(); // Start static sound
-  messageEl.textContent = ""; // Clear message
+  radioSound.currentTime = 0;
+  radioSound.play();
+  messageEl.textContent = "";
 
   try {
     const { data } = await functions
@@ -33,9 +42,8 @@ submitBtn.onclick = async () => {
     console.error("❌ Repost failed:", err);
     alert(err.message);
   } finally {
-    // 🔥 Hide radio dial + stop sound
     radioLoading.style.display = "none";
-    radioSound.pause(); // Stop static sound
+    radioSound.pause();
   }
 };
 
