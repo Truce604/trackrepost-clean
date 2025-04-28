@@ -1,35 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TrackRepost - Campaigns</title>
     <link rel="stylesheet" href="styles.css"> <!-- Link to your CSS -->
-    
+
     <!-- ✅ Load Firebase -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
-    <!-- ✅ Load SoundCloud SDK -->
-    <script src="https://connect.soundcloud.com/sdk.js"></script>
-
     <!-- ✅ Load Firebase Configuration -->
-    <script src="firebaseConfig.js"></script>
+    <script src="/js/firebaseConfig.js"></script>
+    <script src="/js/firebase-init.js"></script> <!-- Make sure you initialize Firebase app -->
 
     <!-- ✅ Load Authentication & Script AFTER Firebase -->
-    <script src="auth.js" defer></script>
+    <script src="/js/auth.js" defer></script>
 </head>
 
 <body>
     <header>
         <h1>🔥 Active Campaigns</h1>
-        <p>Explore the campaigns and repost to earn credits!</p>
+        <p>Explore campaigns and repost tracks to earn credits!</p>
     </header>
 
     <!-- ✅ Genre Filter -->
     <div class="container">
-        <h2>🎵 Filter Campaigns by Genre</h2>
+        <h2>🎵 Filter by Genre</h2>
         <select id="genreFilter">
             <option value="all">All Genres</option>
             <option value="hiphop">Hip-Hop</option>
@@ -57,7 +55,7 @@
         function loadCampaigns() {
             const campaignsDiv = document.getElementById("campaignsContainer");
 
-            firebase.firestore().collection("campaigns").orderBy("timestamp", "desc").onSnapshot(snapshot => {
+            firebase.firestore().collection("campaigns").orderBy("createdAt", "desc").onSnapshot(snapshot => {
                 campaignsDiv.innerHTML = "";  // Clear before adding new
                 allCampaigns = []; // Reset campaign list
 
@@ -75,7 +73,7 @@
             });
         }
 
-        // ✅ FUNCTION: Render Campaigns based on Filter
+        // ✅ FUNCTION: Render Campaigns
         function renderCampaigns(campaigns) {
             const campaignsDiv = document.getElementById("campaignsContainer");
             campaignsDiv.innerHTML = "";
@@ -87,20 +85,20 @@
 
             campaigns.forEach(data => {
                 const campaignId = data.id;
-                const trackUrl = data.track;
+                const trackUrl = data.trackUrl; // 🚨 Your Firestore field should be "trackUrl"
                 const creditsRequired = data.credits || 0;
                 const genre = data.genre || "Unknown Genre";
 
                 campaignsDiv.innerHTML += `
-                    <div class="campaign">
-                        <h3>🔥 ${genre} Promotion</h3>
+                    <div class="campaign-card">
+                        <h3>${data.title || "Untitled Track"}</h3>
+                        <p><strong>Genre:</strong> ${genre}</p>
+                        <p><strong>Credits Required:</strong> ${creditsRequired}</p>
                         <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" 
                             src="https://w.soundcloud.com/player/?url=${encodeURIComponent(trackUrl)}">
                         </iframe>
-                        <p>💰 Required Credits: ${creditsRequired}</p>
-                        <button onclick="repostTrack('${campaignId}', '${data.owner}', '${trackUrl}')">
-                            Repost & Earn Credits
-                        </button>
+                        <br><br>
+                        <a href="repost-action.html?campaignId=${campaignId}" class="button">🎵 Repost This Track</a>
                     </div>
                 `;
             });
