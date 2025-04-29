@@ -1,18 +1,17 @@
-// ✅ Select DOM Elements
+// ✅ No db initialization at top! (db is already globally available)
+
 const submitBtn = document.getElementById("submitRepost");
 const likeEl = document.getElementById("likeTrack");
 const commentToggle = document.getElementById("commentBoxToggle");
 const commentBox = document.getElementById("commentText");
 const messageEl = document.getElementById("message");
 const actionsEl = document.getElementById("repostActions");
-const radioLoading = document.getElementById("radioLoading"); // 🎛️ Dial div
-const radioSound = document.getElementById("radioSound"); // 🎶 Static sound
+const radioLoading = document.getElementById("radioLoading");
+const radioSound = document.getElementById("radioSound");
 const campaignTitleEl = document.getElementById("campaignTitle");
 const campaignInfoEl = document.getElementById("campaignInfo");
 
-// ✅ Initialize Firebase
 const functions = firebase.app().functions("us-central1");
-const db = firebase.firestore();
 
 // ✅ Get campaignId from URL
 const urlParams = new URLSearchParams(window.location.search);
@@ -21,19 +20,19 @@ const campaignId = urlParams.get('campaignId');
 // ✅ Safe Redirect if missing campaignId
 if (!campaignId) {
   alert("Invalid or missing campaign ID. Redirecting to Explore.");
-  window.location.href = "explore.html"; // 🔥 Bounce back safely
+  window.location.href = "explore.html"; 
   throw new Error("Missing campaignId - user redirected.");
 }
 
 // ✅ Load campaign data
 async function loadCampaign() {
   try {
-    const campaignRef = db.collection("campaigns").doc(campaignId);
+    const campaignRef = db.collection("campaigns").doc(campaignId); // ✅ db used directly
     const campaignSnap = await campaignRef.get();
 
     if (!campaignSnap.exists) {
       alert("Campaign not found. Redirecting to Explore.");
-      window.location.href = "explore.html"; // 🔥 Bounce if bad campaign
+      window.location.href = "explore.html"; 
       return;
     }
 
@@ -47,11 +46,11 @@ async function loadCampaign() {
       <a href="${campaign.trackUrl}" target="_blank" class="button">🎵 Listen to Track</a>
     `;
 
-    actionsEl.style.display = "block"; // Show repost actions
+    actionsEl.style.display = "block"; 
   } catch (error) {
     console.error("Error loading campaign:", error);
     alert("Error loading campaign. Redirecting.");
-    window.location.href = "explore.html"; // 🔥 Bounce on error
+    window.location.href = "explore.html"; 
   }
 }
 
@@ -88,4 +87,5 @@ commentToggle.addEventListener("change", () => {
 
 // ✅ Load campaign on page start
 loadCampaign();
+
 
