@@ -1,5 +1,3 @@
-// ✅ Initialize Firestore
-const db = firebase.firestore();
 const campaignList = document.getElementById("campaignList");
 
 // ✅ Load campaigns
@@ -51,3 +49,4 @@ async function loadCampaigns() {
 
 // ✅ Auto load on page ready
 document.addEventListener("DOMContentLoaded", loadCampaigns);
+
