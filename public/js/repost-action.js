@@ -1,5 +1,4 @@
-// ✅ No db initialization at top! (db is already globally available)
-
+// ✅ Select DOM Elements
 const submitBtn = document.getElementById("submitRepost");
 const likeEl = document.getElementById("likeTrack");
 const commentToggle = document.getElementById("commentBoxToggle");
@@ -11,7 +10,7 @@ const radioSound = document.getElementById("radioSound");
 const campaignTitleEl = document.getElementById("campaignTitle");
 const campaignInfoEl = document.getElementById("campaignInfo");
 
-const functions = firebase.app().functions("us-central1");
+const functions = firebase.app().functions("us-central1"); // ✅ Correct region
 
 // ✅ Get campaignId from URL
 const urlParams = new URLSearchParams(window.location.search);
@@ -19,20 +18,20 @@ const campaignId = urlParams.get('campaignId');
 
 // ✅ Safe Redirect if missing campaignId
 if (!campaignId) {
-  alert("Invalid or missing campaign ID. Redirecting to Explore.");
-  window.location.href = "explore.html"; 
-  throw new Error("Missing campaignId - user redirected.");
+  alert("Missing campaign ID. Redirecting...");
+  window.location.href = "explore.html";
+  throw new Error("Missing campaignId in URL");
 }
 
-// ✅ Load campaign data
+// ✅ Load campaign data from Firestore
 async function loadCampaign() {
   try {
-    const campaignRef = db.collection("campaigns").doc(campaignId); // ✅ db used directly
+    const campaignRef = db.collection("campaigns").doc(campaignId);
     const campaignSnap = await campaignRef.get();
 
     if (!campaignSnap.exists) {
-      alert("Campaign not found. Redirecting to Explore.");
-      window.location.href = "explore.html"; 
+      alert("Campaign not found. Redirecting...");
+      window.location.href = "explore.html";
       return;
     }
 
@@ -46,15 +45,15 @@ async function loadCampaign() {
       <a href="${campaign.trackUrl}" target="_blank" class="button">🎵 Listen to Track</a>
     `;
 
-    actionsEl.style.display = "block"; 
+    actionsEl.style.display = "block";
   } catch (error) {
     console.error("Error loading campaign:", error);
-    alert("Error loading campaign. Redirecting.");
-    window.location.href = "explore.html"; 
+    alert("Error loading campaign. Redirecting...");
+    window.location.href = "explore.html";
   }
 }
 
-// ✅ Handle repost submit
+// ✅ Handle Confirm Repost
 submitBtn.onclick = async () => {
   const liked = likeEl.checked;
   const comment = commentToggle.checked ? commentBox.value.trim() : null;
@@ -65,15 +64,15 @@ submitBtn.onclick = async () => {
   messageEl.textContent = "";
 
   try {
-    const { data } = await functions
-      .httpsCallable("processRepost")({ campaignId, liked, comment });
+    const processRepost = functions.httpsCallable("processRepost"); // ✅ Proper callable usage
+    const response = await processRepost({ campaignId, liked, comment });
 
-    messageEl.textContent = `🎉 You earned ${data.earned} credits!`;
+    messageEl.textContent = `🎉 You earned ${response.data.earned} credits!`;
     actionsEl.style.display = "none";
-    console.log("✅ Repost complete:", data);
+    console.log("✅ Repost complete:", response.data);
   } catch (err) {
     console.error("❌ Repost failed:", err);
-    alert(err.message);
+    alert("Something went wrong while reposting.");
   } finally {
     radioLoading.style.display = "none";
     radioSound.pause();
@@ -85,6 +84,7 @@ commentToggle.addEventListener("change", () => {
   commentBox.style.display = commentToggle.checked ? "block" : "none";
 });
 
-// ✅ Load campaign on page start
+// ✅ Load campaign on start
 loadCampaign();
+
 
