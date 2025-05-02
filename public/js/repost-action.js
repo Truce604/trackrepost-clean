@@ -1,4 +1,3 @@
-// ✅ Select DOM Elements
 const submitBtn = document.getElementById("submitRepost");
 const likeEl = document.getElementById("likeTrack");
 const commentToggle = document.getElementById("commentBoxToggle");
@@ -10,20 +9,15 @@ const radioSound = document.getElementById("radioSound");
 const campaignTitleEl = document.getElementById("campaignTitle");
 const campaignInfoEl = document.getElementById("campaignInfo");
 
-const functions = firebase.app().functions("us-central1"); // ✅ Correct region
-
-// ✅ Get campaignId from URL
 const urlParams = new URLSearchParams(window.location.search);
 const campaignId = urlParams.get('campaignId');
 
-// ✅ Safe Redirect if missing campaignId
 if (!campaignId) {
   alert("Missing campaign ID. Redirecting...");
   window.location.href = "explore.html";
   throw new Error("Missing campaignId in URL");
 }
 
-// ✅ Load campaign data from Firestore
 async function loadCampaign() {
   try {
     const campaignRef = db.collection("campaigns").doc(campaignId);
@@ -53,7 +47,6 @@ async function loadCampaign() {
   }
 }
 
-// ✅ Handle Confirm Repost
 submitBtn.onclick = async () => {
   const liked = likeEl.checked;
   const comment = commentToggle.checked ? commentBox.value.trim() : null;
@@ -64,12 +57,34 @@ submitBtn.onclick = async () => {
   messageEl.textContent = "";
 
   try {
-    const processRepost = functions.httpsCallable("processRepost"); // ✅ Proper callable usage
-    const response = await processRepost({ campaignId, liked, comment });
+    const user = firebase.auth().currentUser;
+    if (!user) {
+      alert("You must be signed in to repost.");
+      return;
+    }
 
-    messageEl.textContent = `🎉 You earned ${response.data.earned} credits!`;
+    const response = await fetch("https://us-central1-trackrepost-921f8.cloudfunctions.net/processRepost", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        campaignId,
+        liked,
+        comment,
+        userId: user.uid,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText);
+    }
+
+    const data = await response.json();
+    messageEl.textContent = `🎉 You earned ${data.earned} credits!`;
     actionsEl.style.display = "none";
-    console.log("✅ Repost complete:", response.data);
+    console.log("✅ Repost complete:", data);
   } catch (err) {
     console.error("❌ Repost failed:", err);
     alert("Something went wrong while reposting.");
@@ -79,12 +94,8 @@ submitBtn.onclick = async () => {
   }
 };
 
-// ✅ Show/hide comment box
 commentToggle.addEventListener("change", () => {
   commentBox.style.display = commentToggle.checked ? "block" : "none";
 });
 
-// ✅ Load campaign on start
 loadCampaign();
-
-
