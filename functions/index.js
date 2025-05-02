@@ -1,6 +1,7 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
-const cors = require("cors")({ origin: true }); // ✅ Allow all origins
+const cors = require("cors")({ origin: true }); // ✅ Enable CORS for all domains
+
 admin.initializeApp();
 const db = admin.firestore();
 
