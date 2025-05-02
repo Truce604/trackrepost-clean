@@ -1,76 +1,68 @@
-// functions/index.js
-
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
+const cors = require("cors")({ origin: true }); // ✅ Allow all origins
 admin.initializeApp();
 const db = admin.firestore();
 
-/**
- * Callable function that:
- * 1. Creates the repost doc
- * 2. Decrements campaign credits
- * 3. Increments user credits
- */
-exports.processRepost = functions.https.onCall(async (data, context) => {
-  // 1️⃣ Auth check
-  if (!context.auth) {
-    throw new functions.https.HttpsError("unauthenticated", "Sign in first");
-  }
-  const userId = context.auth.uid;
-  const { campaignId, liked = false, comment = null } = data;
+exports.processRepost = functions.https.onRequest((req, res) => {
+  cors(req, res, async () => {
+    try {
+      if (req.method !== "POST") {
+        return res.status(405).send("Method Not Allowed");
+      }
 
-  // 2️⃣ Load campaign
-  const campaignRef = db.collection("campaigns").doc(campaignId);
-  const campaignSnap = await campaignRef.get();
-  if (!campaignSnap.exists) {
-    throw new functions.https.HttpsError("not-found", "Campaign not found");
-  }
-  const campaign = campaignSnap.data();
+      const { campaignId, liked = false, comment = null, userId } = req.body;
 
-  // 3️⃣ Prevent self-repost
-  if (campaign.userId === userId) {
-    throw new functions.https.HttpsError("failed-precondition", "Cannot repost your own");
-  }
+      if (!userId) {
+        return res.status(401).send("Missing user ID");
+      }
 
-  // 4️⃣ Compute cost
-  const cost = 1 + (liked ? 1 : 0) + (comment ? 2 : 0);
-  if (campaign.credits < cost) {
-    throw new functions.https.HttpsError("resource-exhausted", "Campaign out of credits");
-  }
+      const campaignRef = db.collection("campaigns").doc(campaignId);
+      const campaignSnap = await campaignRef.get();
+      if (!campaignSnap.exists) {
+        return res.status(404).send("Campaign not found");
+      }
 
-  // 5️⃣ Transaction
-  await db.runTransaction(async tx => {
-    // Create repost
-    const repostRef = db
-      .collection("reposts")
-      .doc(`${userId}_${campaignId}`);
-    tx.set(repostRef, {
-      userId,
-      campaignId,
-      trackUrl: campaign.trackUrl,
-      liked,
-      comment,
-      timestamp: admin.firestore.FieldValue.serverTimestamp(),
-      prompted: false,
-    });
+      const campaign = campaignSnap.data();
 
-    // Debit campaign
-    tx.update(campaignRef, {
-      credits: admin.firestore.FieldValue.increment(-cost),
-    });
+      if (campaign.userId === userId) {
+        return res.status(403).send("Cannot repost your own campaign");
+      }
 
-    // Credit user
-    const userRef = db.collection("users").doc(userId);
-    tx.update(userRef, {
-      credits: admin.firestore.FieldValue.increment(cost),
-    });
+      const cost = 1 + (liked ? 1 : 0) + (comment ? 2 : 0);
+      if (campaign.credits < cost) {
+        return res.status(400).send("Not enough credits");
+      }
+
+      await db.runTransaction(async (tx) => {
+        const repostRef = db.collection("reposts").doc(`${userId}_${campaignId}`);
+        tx.set(repostRef, {
+          userId,
+          campaignId,
+          trackUrl: campaign.trackUrl,
+          liked,
+          comment,
+          timestamp: admin.firestore.FieldValue.serverTimestamp(),
+          prompted: false,
+        });
+
+        tx.update(campaignRef, {
+          credits: admin.firestore.FieldValue.increment(-cost),
+        });
+
+        const userRef = db.collection("users").doc(userId);
+        tx.update(userRef, {
+          credits: admin.firestore.FieldValue.increment(cost),
+        });
+      });
+
+      return res.status(200).json({ earned: cost });
+    } catch (err) {
+      console.error("processRepost error:", err);
+      res.status(500).send("Internal Server Error");
+    }
   });
-
-  return { earned: cost };
 });
-
-
-
 
 
 
