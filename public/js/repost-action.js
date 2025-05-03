@@ -1,4 +1,21 @@
-// ✅ Firebase Compatibility SDK assumed loaded
+// ✅ repost-action.js (FULL CODE)
+
+// Firebase Compat SDKs already loaded globally via HTML
+const db = firebase.firestore();
+const auth = firebase.auth();
+const functions = firebase.app().functions("us-central1");
+
+// ✅ Get campaignId from URL
+const urlParams = new URLSearchParams(window.location.search);
+const campaignId = urlParams.get("campaignId");
+
+if (!campaignId) {
+  throw new Error("Missing campaignId in URL.");
+}
+
+// ✅ Select DOM Elements
+const campaignTitle = document.getElementById("campaignTitle");
+const campaignInfo = document.getElementById("campaignInfo");
 const submitBtn = document.getElementById("submitRepost");
 const likeEl = document.getElementById("likeTrack");
 const commentToggle = document.getElementById("commentBoxToggle");
@@ -8,53 +25,73 @@ const actionsEl = document.getElementById("repostActions");
 const radioLoading = document.getElementById("radioLoading");
 const radioSound = document.getElementById("radioSound");
 
-// ✅ Extract campaignId from URL
-const urlParams = new URLSearchParams(window.location.search);
-const campaignId = urlParams.get("campaignId");
+// ✅ Load Campaign
+async function loadCampaign() {
+  const doc = await db.collection("campaigns").doc(campaignId).get();
+  if (!doc.exists) {
+    campaignTitle.textContent = "Campaign not found.";
+    return;
+  }
 
-if (!campaignId) {
-  messageEl.textContent = "⚠️ Missing campaignId. Please access from Explore page.";
-  throw new Error("Missing campaignId in URL.");
+  const data = doc.data();
+  campaignTitle.textContent = data.title || "Track Repost";
+  campaignInfo.innerHTML = `
+    <p><strong>Genre:</strong> ${data.genre || "N/A"}</p>
+    <p><strong>Credits Remaining:</strong> ${data.credits}</p>
+    <p><a href="${data.trackUrl}" target="_blank">🔗 SoundCloud Track</a></p>
+  `;
+
+  actionsEl.style.display = "block";
 }
 
-// ✅ Toggle comment box visibility
-commentToggle.addEventListener("change", () => {
-  commentBox.style.display = commentToggle.checked ? "block" : "none";
-});
-
-// ✅ Submit repost
+// ✅ Repost Button Click
 submitBtn.onclick = async () => {
   const liked = likeEl.checked;
   const comment = commentToggle.checked ? commentBox.value.trim() : null;
 
-  // 🎛️ Play radio static and show loading
+  // 🔊 Radio Effect
   radioLoading.style.display = "block";
   radioSound.currentTime = 0;
   radioSound.play();
   messageEl.textContent = "";
 
   try {
-    const user = firebase.auth().currentUser;
-    if (!user) {
-      alert("⚠️ Please sign in first.");
-      return;
-    }
+    const user = auth.currentUser;
+    if (!user) throw new Error("Not signed in");
 
-    const result = await firebase.functions().httpsCallable("processRepost")({
-      campaignId,
-      liked,
-      comment,
+    const res = await fetch("https://us-central1-trackrepost-921f8.cloudfunctions.net/processRepost", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId: user.uid,
+        campaignId,
+        earnedCredits: 1 + (liked ? 1 : 0) + (comment ? 2 : 0),
+        liked,
+        comment,
+      }),
     });
 
-    const earned = result.data.earned;
-    messageEl.textContent = `🎉 You earned ${earned} credits!`;
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Internal Error");
+
+    messageEl.textContent = `🎉 Repost complete! You earned ${data.earnedCredits || 0} credits.`;
     actionsEl.style.display = "none";
-    console.log("✅ Repost processed:", result.data);
   } catch (err) {
     console.error("❌ Repost failed:", err);
-    alert(err.message || "Something went wrong.");
+    alert(err.message);
   } finally {
     radioLoading.style.display = "none";
     radioSound.pause();
   }
 };
+
+// ✅ Toggle Comment Box
+commentToggle.addEventListener("change", () => {
+  commentBox.style.display = commentToggle.checked ? "block" : "none";
+});
+
+// ✅ Load on Page Load
+auth.onAuthStateChanged(user => {
+  if (user) loadCampaign();
+  else campaignTitle.textContent = "Please sign in to continue.";
+});
