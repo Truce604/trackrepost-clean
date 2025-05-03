@@ -1,7 +1,7 @@
-// Initialize Firebase Functions
+// Firebase Functions init
 const functions = firebase.app().functions("us-central1");
 
-// Select DOM Elements
+// DOM elements
 const submitBtn = document.getElementById("submitRepost");
 const likeEl = document.getElementById("likeTrack");
 const commentToggle = document.getElementById("commentBoxToggle");
@@ -13,10 +13,13 @@ const radioSound = document.getElementById("radioSound");
 
 // Get campaignId from URL
 const urlParams = new URLSearchParams(window.location.search);
-const campaignId = urlParams.get("campaignId");
+let campaignId = urlParams.get("campaignId") || urlParams.get("id"); // fallback for safety
+
+console.log("📦 Full URL:", window.location.href);
+console.log("📦 Detected campaignId:", campaignId);
 
 if (!campaignId) {
-  document.getElementById("campaignTitle").textContent = "❌ Invalid Repost URL";
+  document.getElementById("campaignTitle").textContent = "❌ Invalid Repost Link";
   messageEl.textContent = "Missing campaignId. Please access this page from the Explore section.";
   actionsEl.style.display = "none";
 } else {
@@ -25,7 +28,7 @@ if (!campaignId) {
     commentBox.style.display = commentToggle.checked ? "block" : "none";
   });
 
-  // Load campaign info
+  // Load campaign
   firebase.firestore().collection("campaigns").doc(campaignId).get()
     .then(doc => {
       if (!doc.exists) {
@@ -34,7 +37,7 @@ if (!campaignId) {
       }
 
       const data = doc.data();
-      document.getElementById("campaignTitle").textContent = data.title || "Untitled Track";
+      document.getElementById("campaignTitle").textContent = data.title || "Untitled";
       document.getElementById("campaignInfo").innerHTML = `
         <p><strong>Genre:</strong> ${data.genre || "Unknown"}</p>
         <p><strong>Credits Remaining:</strong> ${data.credits || 0}</p>
@@ -44,16 +47,15 @@ if (!campaignId) {
       actionsEl.style.display = "block";
     })
     .catch(err => {
-      console.error("❌ Failed to load campaign:", err);
-      messageEl.textContent = "Error loading campaign.";
+      console.error("❌ Error loading campaign:", err);
+      messageEl.textContent = "Failed to load campaign. Check the console for details.";
     });
 
-  // Handle repost submission
+  // Handle repost
   submitBtn.onclick = async () => {
     const liked = likeEl.checked;
     const comment = commentToggle.checked ? commentBox.value.trim() : null;
 
-    // Show radio dial and static
     radioLoading.style.display = "block";
     radioSound.currentTime = 0;
     radioSound.play();
