@@ -1,72 +1,72 @@
+// functions/index.js
+
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
+const cors = require("cors");
 admin.initializeApp();
 const db = admin.firestore();
+const corsHandler = cors({ origin: true });
 
-/**
- * Callable function to process a repost:
- * - Adds a repost record
- * - Deducts credits from campaign
- * - Adds credits to user
- */
-exports.processRepost = functions.https.onCall(async (data, context) => {
-  if (!context.auth) {
-    throw new functions.https.HttpsError("unauthenticated", "Please log in first.");
-  }
+// ✅ Repost with CORS-safe HTTP trigger
+exports.processRepost = functions.https.onRequest((req, res) => {
+  corsHandler(req, res, async () => {
+    if (req.method !== "POST") {
+      return res.status(405).send("Method Not Allowed");
+    }
 
-  const userId = context.auth.uid;
-  const { campaignId, liked, comment } = data;
+    try {
+      const { userId, campaignId, liked, comment } = req.body;
+      if (!userId || !campaignId) {
+        return res.status(400).json({ error: "Missing parameters" });
+      }
 
-  if (!campaignId) {
-    throw new functions.https.HttpsError("invalid-argument", "Campaign ID is required.");
-  }
+      const campaignRef = db.collection("campaigns").doc(campaignId);
+      const userRef = db.collection("users").doc(userId);
+      const repostRef = db.collection("reposts").doc(`${userId}_${campaignId}`);
 
-  const campaignRef = db.collection("campaigns").doc(campaignId);
-  const userRef = db.collection("users").doc(userId);
-  const repostRef = db.collection("reposts").doc(`${userId}_${campaignId}`);
+      const campaignSnap = await campaignRef.get();
+      if (!campaignSnap.exists) {
+        return res.status(404).json({ error: "Campaign not found" });
+      }
 
-  const campaignSnap = await campaignRef.get();
-  if (!campaignSnap.exists) {
-    throw new functions.https.HttpsError("not-found", "Campaign not found.");
-  }
+      const campaign = campaignSnap.data();
 
-  const campaign = campaignSnap.data();
+      if (campaign.owner === userId) {
+        return res.status(403).json({ error: "You cannot repost your own campaign" });
+      }
 
-  if (campaign.userId === userId) {
-    throw new functions.https.HttpsError("failed-precondition", "You can't repost your own campaign.");
-  }
+      const cost = 1 + (liked ? 1 : 0) + (comment ? 2 : 0);
 
-  const alreadyReposted = await repostRef.get();
-  if (alreadyReposted.exists) {
-    throw new functions.https.HttpsError("already-exists", "You've already reposted this campaign.");
-  }
+      if (campaign.credits < cost) {
+        return res.status(400).json({ error: "Campaign out of credits" });
+      }
 
-  const cost = 1 + (liked ? 1 : 0) + (comment ? 2 : 0);
-  if (campaign.credits < cost) {
-    throw new functions.https.HttpsError("resource-exhausted", "Campaign does not have enough credits.");
-  }
+      await db.runTransaction(async (tx) => {
+        tx.set(repostRef, {
+          userId,
+          campaignId,
+          trackUrl: campaign.trackUrl,
+          liked,
+          comment,
+          timestamp: admin.firestore.FieldValue.serverTimestamp(),
+          prompted: false,
+        });
 
-  await db.runTransaction(async (tx) => {
-    tx.set(repostRef, {
-      userId,
-      campaignId,
-      liked: !!liked,
-      comment: comment || "",
-      trackUrl: campaign.trackUrl || "",
-      timestamp: admin.firestore.FieldValue.serverTimestamp(),
-      prompted: false,
-    });
+        tx.update(campaignRef, {
+          credits: admin.firestore.FieldValue.increment(-cost),
+        });
 
-    tx.update(campaignRef, {
-      credits: admin.firestore.FieldValue.increment(-cost),
-    });
+        tx.update(userRef, {
+          credits: admin.firestore.FieldValue.increment(cost),
+        });
+      });
 
-    tx.update(userRef, {
-      credits: admin.firestore.FieldValue.increment(cost),
-    });
+      return res.status(200).json({ earned: cost });
+    } catch (err) {
+      console.error("❌ Error in processRepost:", err);
+      return res.status(500).json({ error: "Internal Server Error" });
+    }
   });
-
-  return { earned: cost };
 });
 
 
