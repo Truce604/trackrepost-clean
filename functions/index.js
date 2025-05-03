@@ -1,122 +1,72 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
-const cors = require("cors");
-const { v4: uuidv4 } = require("uuid");
-const squareConnect = require("square-connect");
-
 admin.initializeApp();
 const db = admin.firestore();
-const corsHandler = cors({ origin: true });
 
-// 🔁 Repost with CORS (HTTPS request version)
-exports.processRepost = functions.https.onRequest((req, res) => {
-  corsHandler(req, res, async () => {
-    if (req.method !== "POST") return res.status(405).send("Method Not Allowed");
+/**
+ * Callable function to process a repost:
+ * - Adds a repost record
+ * - Deducts credits from campaign
+ * - Adds credits to user
+ */
+exports.processRepost = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Please log in first.");
+  }
 
-    try {
-      const { userId, campaignId, earnedCredits, liked, comment } = req.body;
+  const userId = context.auth.uid;
+  const { campaignId, liked, comment } = data;
 
-      if (!userId || !campaignId || typeof earnedCredits !== "number") {
-        return res.status(400).json({ error: "Missing or invalid parameters" });
-      }
+  if (!campaignId) {
+    throw new functions.https.HttpsError("invalid-argument", "Campaign ID is required.");
+  }
 
-      await db.collection("users").doc(userId).update({
-        credits: admin.firestore.FieldValue.increment(earnedCredits),
-      });
+  const campaignRef = db.collection("campaigns").doc(campaignId);
+  const userRef = db.collection("users").doc(userId);
+  const repostRef = db.collection("reposts").doc(`${userId}_${campaignId}`);
 
-      await db.collection("reposts").doc(`${userId}_${campaignId}`).set({
-        userId,
-        campaignId,
-        earnedCredits,
-        liked: !!liked,
-        comment: comment || "",
-        timestamp: admin.firestore.FieldValue.serverTimestamp(),
-      });
+  const campaignSnap = await campaignRef.get();
+  if (!campaignSnap.exists) {
+    throw new functions.https.HttpsError("not-found", "Campaign not found.");
+  }
 
-      return res.status(200).json({ success: true });
-    } catch (err) {
-      console.error("❌ Error processing repost:", err);
-      return res.status(500).json({ error: "Internal Server Error" });
-    }
+  const campaign = campaignSnap.data();
+
+  if (campaign.userId === userId) {
+    throw new functions.https.HttpsError("failed-precondition", "You can't repost your own campaign.");
+  }
+
+  const alreadyReposted = await repostRef.get();
+  if (alreadyReposted.exists) {
+    throw new functions.https.HttpsError("already-exists", "You've already reposted this campaign.");
+  }
+
+  const cost = 1 + (liked ? 1 : 0) + (comment ? 2 : 0);
+  if (campaign.credits < cost) {
+    throw new functions.https.HttpsError("resource-exhausted", "Campaign does not have enough credits.");
+  }
+
+  await db.runTransaction(async (tx) => {
+    tx.set(repostRef, {
+      userId,
+      campaignId,
+      liked: !!liked,
+      comment: comment || "",
+      trackUrl: campaign.trackUrl || "",
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      prompted: false,
+    });
+
+    tx.update(campaignRef, {
+      credits: admin.firestore.FieldValue.increment(-cost),
+    });
+
+    tx.update(userRef, {
+      credits: admin.firestore.FieldValue.increment(cost),
+    });
   });
+
+  return { earned: cost };
 });
-
-// 👤 Assign 30 free credits on user signup
-exports.assignCreditsOnSignup = functions.auth.user().onCreate(async (user) => {
-  const userId = user.uid;
-
-  try {
-    await db.collection("users").doc(userId).set(
-      {
-        credits: 30,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      },
-      { merge: true }
-    );
-    console.log(`✅ Assigned 30 credits to new user: ${userId}`);
-  } catch (error) {
-    console.error(`❌ Failed to assign signup credits:`, error);
-  }
-});
-
-// 💳 Create a Square checkout
-exports.createCheckout = functions.https.onRequest(async (req, res) => {
-  if (req.method !== "POST") return res.status(405).send("Method Not Allowed");
-
-  const { userId, credits, plan } = req.body;
-  if (!userId || !credits) {
-    return res.status(400).json({ error: "Missing required parameters" });
-  }
-
-  try {
-    const defaultClient = squareConnect.ApiClient.instance;
-    defaultClient.basePath = "https://connect.squareup.com";
-    defaultClient.authentications["oauth2"].accessToken = process.env.SQUARE_ACCESS_TOKEN;
-
-    const checkoutApi = new squareConnect.CheckoutApi();
-    const locationId = process.env.SQUARE_LOCATION_ID;
-
-    const requestBody = {
-      idempotency_key: uuidv4(),
-      order: {
-        order: {
-          location_id: locationId,
-          line_items: [
-            {
-              name: `${credits} Credits`,
-              quantity: "1",
-              base_price_money: {
-                amount: getPriceCents(credits),
-                currency: "CAD",
-              },
-            },
-          ],
-        },
-      },
-      ask_for_shipping_address: false,
-      redirect_url: `https://www.trackrepost.com/payment-success`,
-      note: `${credits} Credits Purchase for userId=${userId}${plan ? ` Plan=${plan}` : ""}`,
-    };
-
-    const response = await checkoutApi.createCheckout(locationId, requestBody);
-    const checkoutUrl = response.checkout.checkout_page_url;
-
-    return res.status(200).json({ checkoutUrl });
-  } catch (err) {
-    console.error("❌ Failed to create Square checkout:", err.response?.text || err);
-    return res.status(500).json({ error: "Failed to create checkout" });
-  }
-});
-
-function getPriceCents(credits) {
-  switch (credits) {
-    case 500: return 2499;
-    case 1000: return 3499;
-    case 2500: return 7999;
-    case 5000: return 13999;
-    case 25000: return 54999;
-    default: return 0;
-  }
-}
 
 
