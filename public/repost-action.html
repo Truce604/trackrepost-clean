@@ -2,52 +2,46 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Repost Track | TrackRepost</title>
-  <link rel="stylesheet" href="/styles.css" />
-  <link rel="icon" href="/images/favicon.png" type="image/png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Repost Track</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" href="/images/favicon.png" type="image/png" />
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-functions.js"></script>
+
+  <!-- Firebase Config -->
+  <script src="/js/firebaseConfig.js"></script>
+  <script src="/js/firebase-init.js"></script>
+
+  <!-- Header -->
+  <script type="module" src="/js/header.js"></script>
 </head>
 <body>
-  <header id="site-header"></header>
+  <div class="container">
+    <h1 id="campaignTitle">Loading...</h1>
+    <div id="campaignInfo"></div>
 
-  <main class="container">
-    <h1 id="campaignTitle">🎵 Loading...</h1>
-
-    <section id="campaignInfo" class="campaign-info">
-      <p>Fetching campaign details...</p>
-    </section>
-
-    <section id="repostActions" style="display:none;">
-      <div class="repost-options">
-        <label>
-          <input type="checkbox" id="likeTrack" checked />
-          ❤️ Like this track (earn +1 credit)
-        </label>
-
-        <label>
-          <input type="checkbox" id="commentBoxToggle" />
-          💬 Leave a comment (earn +2 credits)
-        </label>
-
-        <textarea id="commentText" placeholder="Great track! 🔥" style="display:none;"></textarea>
-      </div>
-
-      <button id="submitRepost" class="button">📻 Repost This Track</button>
-      <p id="message" class="success-message"></p>
-    </section>
-
-    <div id="radioLoading" style="display: none; text-align: center;">
-      <img src="/images/radio.gif" alt="Loading..." width="100" />
+    <div id="repostActions" style="display:none;">
+      <label><input type="checkbox" id="likeTrack" checked /> Like Track (1 credit)</label><br>
+      <label><input type="checkbox" id="commentBoxToggle" /> Leave a Comment (2 credits)</label><br>
+      <textarea id="commentText" style="display:none;" placeholder="Enter comment..."></textarea><br>
+      <button id="submitRepost">✅ Confirm Repost</button>
     </div>
-    <audio id="radioSound" src="/audio/radio-static.mp3" preload="auto"></audio>
-  </main>
 
-  <footer>
-    <p>© 2025 TrackRepost. All rights reserved.</p>
-  </footer>
+    <p id="message"></p>
 
-  <!-- Firebase Config & Script -->
-  <script type="module" src="/js/repost-action.js"></script>
-  <script src="/js/header.js"></script>
+    <!-- 🎛️ Radio Visual -->
+    <div id="radioLoading" style="display:none; margin-top:20px;">
+      <img src="/images/radio-dial.png" alt="Tuning..." style="width:50px; animation: radio-spin 1s infinite alternate;">
+      <audio id="radioSound" src="/sounds/radio-static.wav" preload="auto"></audio>
+    </div>
+  </div>
+
+  <script src="/js/repost-action.js"></script>
 </body>
 </html>
+
