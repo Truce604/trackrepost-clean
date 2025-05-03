@@ -1,9 +1,3 @@
-// ✅ Firebase Initialization Assumes Already Done (in firebase-init.js)
-const auth = firebase.auth();
-const firestore = firebase.firestore();
-const functions = firebase.app().functions("us-central1");
-
-// ✅ DOM Elements
 const submitBtn = document.getElementById("submitRepost");
 const likeEl = document.getElementById("likeTrack");
 const commentToggle = document.getElementById("commentBoxToggle");
@@ -25,7 +19,7 @@ if (!campaignId) {
 // ✅ Load Campaign Info
 async function loadCampaign() {
   try {
-    const doc = await firestore.collection("campaigns").doc(campaignId).get();
+    const doc = await firebase.firestore().collection("campaigns").doc(campaignId).get();
     if (!doc.exists) {
       campaignTitle.textContent = "Campaign not found.";
       return;
@@ -47,7 +41,7 @@ loadCampaign();
 
 // ✅ Submit Repost
 submitBtn.onclick = async () => {
-  const user = auth.currentUser;
+  const user = firebase.auth().currentUser;
   if (!user) {
     alert("Please sign in first.");
     return;
