@@ -1,105 +1,86 @@
-// ✅ Firebase SDKs assumed loaded via HTML + firebase-init.js
-document.addEventListener("DOMContentLoaded", async () => {
-  const params = new URLSearchParams(window.location.search);
-  const campaignId = params.get("campaignId");
+// ✅ repost-action.js (final launch-ready)
 
-  if (!campaignId) {
-    document.getElementById("message").textContent =
-      "❌ Missing campaignId in URL. Please access from Explore page.";
-    throw new Error("Missing campaignId in URL.");
-  }
+// Wait for DOM to load
+window.addEventListener("DOMContentLoaded", async () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const campaignId = urlParams.get("campaignId");
+  if (!campaignId) throw new Error("Missing campaignId in URL.");
 
-  const user = firebase.auth().currentUser;
-  if (!user) {
-    document.getElementById("message").textContent = "⚠️ Please sign in.";
+  const campaignTitle = document.getElementById("campaignTitle");
+  const campaignInfo = document.getElementById("campaignInfo");
+  const repostActions = document.getElementById("repostActions");
+  const likeTrack = document.getElementById("likeTrack");
+  const commentBoxToggle = document.getElementById("commentBoxToggle");
+  const commentText = document.getElementById("commentText");
+  const submitBtn = document.getElementById("submitRepost");
+  const message = document.getElementById("message");
+
+  let campaignData = null;
+
+  try {
+    const doc = await db.collection("campaigns").doc(campaignId).get();
+    if (!doc.exists) throw new Error("Campaign not found");
+
+    campaignData = doc.data();
+    campaignTitle.textContent = campaignData.title || "Untitled Campaign";
+    campaignInfo.innerHTML = `
+      <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
+        src="https://w.soundcloud.com/player/?url=${encodeURIComponent(campaignData.trackUrl)}">
+      </iframe>
+      <p>🎯 Genre: ${campaignData.genre}</p>
+      <p>💰 Available Credits: ${campaignData.credits}</p>
+    `;
+    repostActions.style.display = "block";
+  } catch (err) {
+    message.textContent = `❌ ${err.message}`;
     return;
   }
 
-  try {
-    // ✅ Load campaign
-    const campaignDoc = await firebase.firestore().collection("campaigns").doc(campaignId).get();
-    if (!campaignDoc.exists) {
-      document.getElementById("message").textContent = "❌ Campaign not found.";
-      return;
-    }
+  // Toggle comment box
+  commentBoxToggle.addEventListener("change", () => {
+    commentText.style.display = commentBoxToggle.checked ? "block" : "none";
+  });
 
-    const data = campaignDoc.data();
+  // Submit repost
+  submitBtn.onclick = async () => {
+    message.textContent = "⏳ Submitting repost...";
+    const user = firebase.auth().currentUser;
+    if (!user) return (message.textContent = "⚠️ Please sign in.");
 
-    // ✅ Prevent reposting your own
-    if (data.owner === user.uid) {
-      document.getElementById("message").textContent =
-        "⚠️ You can't repost your own campaign.";
-      return;
-    }
+    const liked = likeTrack.checked;
+    const comment = commentBoxToggle.checked ? commentText.value.trim() : null;
 
-    // ✅ Show campaign
-    document.getElementById("campaignTitle").textContent = data.title || "Untitled Track";
-    document.getElementById("campaignInfo").innerHTML = `
-      <p><strong>🎵 Artist:</strong> ${data.artist || "Unknown"}</p>
-      <p><strong>💰 Credits Left:</strong> ${data.credits || 0}</p>
-      <iframe 
-        width="100%" 
-        height="120" 
-        scrolling="no" 
-        frameborder="no" 
-        allow="autoplay"
-        src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.trackUrl)}">
-      </iframe>
-    `;
-
-    document.getElementById("repostActions").style.display = "block";
-
-    // ✅ Handle comment toggle
-    const commentToggle = document.getElementById("commentBoxToggle");
-    const commentText = document.getElementById("commentText");
-    commentToggle.addEventListener("change", () => {
-      commentText.style.display = commentToggle.checked ? "block" : "none";
-    });
-
-    // ✅ Submit repost
-    const submitBtn = document.getElementById("submitRepost");
-    submitBtn.onclick = async () => {
-      const liked = document.getElementById("likeTrack").checked;
-      const comment = commentToggle.checked ? commentText.value.trim() : null;
-
-      try {
-        // 🎛️ Radio static effect
-        document.getElementById("radioLoading").style.display = "block";
-        document.getElementById("radioSound").play();
-
-        const res = await fetch("https://us-central1-trackrepost-921f8.cloudfunctions.net/processRepost", {
+    try {
+      const response = await fetch(
+        "https://us-central1-trackrepost-921f8.cloudfunctions.net/processRepost",
+        {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+          },
           body: JSON.stringify({
             userId: user.uid,
             campaignId,
+            earnedCredits: 1 + (liked ? 1 : 0) + (comment ? 2 : 0),
             liked,
             comment,
-            earnedCredits: 1 + (liked ? 1 : 0) + (comment ? 2 : 0),
           }),
-        });
-
-        const json = await res.json();
-        if (json.success) {
-          document.getElementById("message").textContent =
-            `✅ Repost complete! You earned ${json.earned || "credits"} credits.`;
-        } else {
-          throw new Error(json.error || "Unknown error");
         }
-      } catch (err) {
-        console.error("❌ Repost failed:", err);
-        document.getElementById("message").textContent = `❌ Repost failed: ${err.message}`;
-      } finally {
-        document.getElementById("radioLoading").style.display = "none";
-      }
-    };
-  } catch (err) {
-    console.error("❌ Error loading repost UI:", err);
-    document.getElementById("message").textContent =
-      "❌ Failed to load campaign data.";
-  }
-});
+      );
 
+      const data = await response.json();
+      if (data.success) {
+        message.textContent = `✅ Repost complete! You earned ${data.earnedCredits} credits.`;
+        document.getElementById("radioSound").play();
+      } else {
+        message.textContent = `❌ Failed: ${data.error || "Unknown error"}`;
+      }
+    } catch (err) {
+      console.error("❌ Repost failed:", err);
+      message.textContent = `❌ Repost failed: ${err.message}`;
+    }
+  };
+});
 
 
 
