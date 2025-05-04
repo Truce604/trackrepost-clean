@@ -5,10 +5,11 @@ admin.initializeApp();
 const db = admin.firestore();
 const corsHandler = cors({ origin: true });
 
-// ✅ Process Repost with CORS
 exports.processRepost = functions.https.onRequest((req, res) => {
   corsHandler(req, res, async () => {
-    if (req.method !== "POST") return res.status(405).send("Method Not Allowed");
+    if (req.method !== "POST") {
+      return res.status(405).send("Method Not Allowed");
+    }
 
     try {
       const { userId, campaignId, liked, comment } = req.body;
@@ -19,6 +20,7 @@ exports.processRepost = functions.https.onRequest((req, res) => {
 
       const campaignRef = db.collection("campaigns").doc(campaignId);
       const campaignSnap = await campaignRef.get();
+
       if (!campaignSnap.exists) {
         return res.status(404).json({ error: "Campaign not found" });
       }
@@ -26,7 +28,7 @@ exports.processRepost = functions.https.onRequest((req, res) => {
       const campaign = campaignSnap.data();
 
       if (campaign.userId === userId) {
-        return res.status(400).json({ error: "You cannot repost your own campaign" });
+        return res.status(403).json({ error: "Cannot repost your own campaign" });
       }
 
       const earnedCredits = 1 + (liked ? 1 : 0) + (comment ? 2 : 0);
@@ -56,7 +58,6 @@ exports.processRepost = functions.https.onRequest((req, res) => {
           credits: admin.firestore.FieldValue.increment(earnedCredits),
         });
 
-        // Optional: Log transaction
         const txRef = db.collection("transactions").doc();
         tx.set(txRef, {
           userId,
@@ -67,13 +68,11 @@ exports.processRepost = functions.https.onRequest((req, res) => {
         });
       });
 
-      return res.status(200).json({ earned: earnedCredits });
+      return res.status(200).json({ success: true, earnedCredits });
     } catch (err) {
       console.error("❌ Repost error:", err);
       return res.status(500).json({ error: "Internal Server Error" });
     }
   });
 });
-
-
 
