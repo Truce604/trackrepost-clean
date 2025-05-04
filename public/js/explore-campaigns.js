@@ -1,54 +1,36 @@
-// public/js/explore-campaigns.js
+// /js/explore-campaigns.js
 
-// ✅ Firebase Firestore Init (if not already done)
-const db = firebase.firestore();
-const auth = firebase.auth();
-
-const campaignList = document.getElementById("campaignList");
-
-auth.onAuthStateChanged(async (user) => {
-  if (!user) {
-    campaignList.innerHTML = "<p>Please sign in to view campaigns.</p>";
-    return;
-  }
+document.addEventListener("DOMContentLoaded", async () => {
+  const campaignList = document.getElementById("campaignList");
+  campaignList.innerHTML = "<p>Loading campaigns...</p>";
 
   try {
-    const snapshot = await db.collection("campaigns")
-      .where("credits", ">", 0)
-      .orderBy("credits", "desc")
-      .get();
-
-    campaignList.innerHTML = "";
+    const snapshot = await db.collection("campaigns").orderBy("createdAt", "desc").get();
 
     if (snapshot.empty) {
-      campaignList.innerHTML = "<p>No campaigns available.</p>";
+      campaignList.innerHTML = "<p>No campaigns found.</p>";
       return;
     }
 
-    snapshot.forEach(doc => {
+    campaignList.innerHTML = "";
+
+    snapshot.forEach((doc) => {
       const data = doc.data();
       const campaignId = doc.id;
-      const {
-        artist = "Unknown Artist",
-        title = "Untitled Track",
-        trackUrl,
-        genre = "Unknown Genre",
-        credits = 0,
-        artworkUrl = "/images/placeholder.png"
-      } = data;
 
       const card = document.createElement("div");
       card.className = "campaign-card";
+
       card.innerHTML = `
         <div class="soundcloud-embed">
-          <iframe width="100%" height="120" scrolling="no" frameborder="no" allow="autoplay"
-            src="https://w.soundcloud.com/player/?url=${encodeURIComponent(trackUrl)}&color=%23ff9900"></iframe>
+          <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
+            src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.trackUrl)}">
+          </iframe>
         </div>
         <div class="campaign-details">
-          <h3>${title}</h3>
-          <p>🎤 ${artist}</p>
-          <p>🎵 ${genre}</p>
-          <p>💰 ${credits} Credits</p>
+          <h3>${data.title || "Untitled"}</h3>
+          <p>🎵 ${data.genre || "Genre"}</p>
+          <p>💰 ${data.credits} credits left</p>
           <a href="repost-action.html?campaignId=${campaignId}" class="repost-btn">Repost This</a>
         </div>
       `;
@@ -57,6 +39,7 @@ auth.onAuthStateChanged(async (user) => {
     });
   } catch (err) {
     console.error("❌ Error loading campaigns:", err);
-    campaignList.innerHTML = "<p>Error loading campaigns.</p>";
+    campaignList.innerHTML = "<p>Failed to load campaigns.</p>";
   }
 });
+
