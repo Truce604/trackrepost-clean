@@ -1,10 +1,11 @@
-// ✅ repost-action.js (final launch-ready)
+document.addEventListener("DOMContentLoaded", async () => {
+  const params = new URLSearchParams(window.location.search);
+  const campaignId = params.get("campaignId");
 
-// Wait for DOM to load
-window.addEventListener("DOMContentLoaded", async () => {
-  const urlParams = new URLSearchParams(window.location.search);
-  const campaignId = urlParams.get("campaignId");
-  if (!campaignId) throw new Error("Missing campaignId in URL.");
+  if (!campaignId) {
+    document.body.innerHTML = "<p style='color:red;'>❌ Missing campaignId in URL.</p>";
+    return;
+  }
 
   const campaignTitle = document.getElementById("campaignTitle");
   const campaignInfo = document.getElementById("campaignInfo");
@@ -14,74 +15,71 @@ window.addEventListener("DOMContentLoaded", async () => {
   const commentText = document.getElementById("commentText");
   const submitBtn = document.getElementById("submitRepost");
   const message = document.getElementById("message");
-
-  let campaignData = null;
+  const radioSound = document.getElementById("radioSound");
+  const radioLoading = document.getElementById("radioLoading");
 
   try {
-    const doc = await db.collection("campaigns").doc(campaignId).get();
+    const doc = await firebase.firestore().collection("campaigns").doc(campaignId).get();
     if (!doc.exists) throw new Error("Campaign not found");
 
-    campaignData = doc.data();
-    campaignTitle.textContent = campaignData.title || "Untitled Campaign";
+    const data = doc.data();
+    campaignTitle.textContent = data.title || "Untitled Campaign";
+
     campaignInfo.innerHTML = `
       <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
-        src="https://w.soundcloud.com/player/?url=${encodeURIComponent(campaignData.trackUrl)}">
+        src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.trackUrl)}">
       </iframe>
-      <p>🎯 Genre: ${campaignData.genre}</p>
-      <p>💰 Available Credits: ${campaignData.credits}</p>
+      <p>🎯 Genre: ${data.genre || "Unknown"}</p>
+      <p>💰 Available Credits: ${data.credits || 0}</p>
     `;
+
     repostActions.style.display = "block";
   } catch (err) {
     message.textContent = `❌ ${err.message}`;
     return;
   }
 
-  // Toggle comment box
   commentBoxToggle.addEventListener("change", () => {
     commentText.style.display = commentBoxToggle.checked ? "block" : "none";
   });
 
-  // Submit repost
   submitBtn.onclick = async () => {
     message.textContent = "⏳ Submitting repost...";
+    radioLoading.style.display = "block";
+
     const user = firebase.auth().currentUser;
-    if (!user) return (message.textContent = "⚠️ Please sign in.");
+    if (!user) {
+      message.textContent = "⚠️ Please sign in.";
+      radioLoading.style.display = "none";
+      return;
+    }
 
     const liked = likeTrack.checked;
     const comment = commentBoxToggle.checked ? commentText.value.trim() : null;
+    const earnedCredits = 1 + (liked ? 1 : 0) + (comment ? 2 : 0);
 
     try {
-      const response = await fetch(
-        "https://us-central1-trackrepost-921f8.cloudfunctions.net/processRepost",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            userId: user.uid,
-            campaignId,
-            earnedCredits: 1 + (liked ? 1 : 0) + (comment ? 2 : 0),
-            liked,
-            comment,
-          }),
-        }
-      );
+      const res = await fetch("https://us-central1-trackrepost-921f8.cloudfunctions.net/processRepost", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.uid, campaignId, liked, comment }),
+      });
 
-      const data = await response.json();
-      if (data.success) {
-        message.textContent = `✅ Repost complete! You earned ${data.earnedCredits} credits.`;
-        document.getElementById("radioSound").play();
+      const result = await res.json();
+
+      if (result.success) {
+        message.textContent = `✅ Repost complete! You earned ${result.earnedCredits || earnedCredits} credits.`;
+        radioSound.play();
       } else {
-        message.textContent = `❌ Failed: ${data.error || "Unknown error"}`;
+        message.textContent = `❌ ${result.error || "Repost failed."}`;
       }
     } catch (err) {
-      console.error("❌ Repost failed:", err);
-      message.textContent = `❌ Repost failed: ${err.message}`;
+      console.error("❌ Repost error:", err);
+      message.textContent = "❌ Repost failed. Please try again.";
     }
+
+    radioLoading.style.display = "none";
   };
 });
 
-
-
-
+      
