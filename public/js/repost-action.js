@@ -1,91 +1,105 @@
-// /js/repost-action.js
-
+// ✅ Firebase SDKs assumed loaded via HTML + firebase-init.js
 document.addEventListener("DOMContentLoaded", async () => {
-  const urlParams = new URLSearchParams(window.location.search);
-  const campaignId = urlParams.get("campaignId");
+  const params = new URLSearchParams(window.location.search);
+  const campaignId = params.get("campaignId");
 
   if (!campaignId) {
-    document.getElementById("message").textContent = "❌ Missing campaignId in URL. Please access from the Explore page.";
+    document.getElementById("message").textContent =
+      "❌ Missing campaignId in URL. Please access from Explore page.";
     throw new Error("Missing campaignId in URL.");
   }
 
-  const user = auth.currentUser;
+  const user = firebase.auth().currentUser;
   if (!user) {
-    document.getElementById("message").textContent = "⚠️ Please sign in first.";
+    document.getElementById("message").textContent = "⚠️ Please sign in.";
     return;
   }
 
   try {
-    const doc = await db.collection("campaigns").doc(campaignId).get();
-    if (!doc.exists) {
+    // ✅ Load campaign
+    const campaignDoc = await firebase.firestore().collection("campaigns").doc(campaignId).get();
+    if (!campaignDoc.exists) {
       document.getElementById("message").textContent = "❌ Campaign not found.";
       return;
     }
 
-    const campaign = doc.data();
+    const data = campaignDoc.data();
 
-    if (campaign.owner === user.uid) {
-      document.getElementById("message").textContent = "⚠️ You cannot repost your own campaign.";
+    // ✅ Prevent reposting your own
+    if (data.owner === user.uid) {
+      document.getElementById("message").textContent =
+        "⚠️ You can't repost your own campaign.";
       return;
     }
 
-    document.getElementById("campaignTitle").textContent = campaign.title || "Untitled Campaign";
+    // ✅ Show campaign
+    document.getElementById("campaignTitle").textContent = data.title || "Untitled Track";
     document.getElementById("campaignInfo").innerHTML = `
-      <p>🎵 Genre: ${campaign.genre}</p>
-      <p>💰 Credits left: ${campaign.credits}</p>
-      <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
-        src="https://w.soundcloud.com/player/?url=${encodeURIComponent(campaign.trackUrl)}">
+      <p><strong>🎵 Artist:</strong> ${data.artist || "Unknown"}</p>
+      <p><strong>💰 Credits Left:</strong> ${data.credits || 0}</p>
+      <iframe 
+        width="100%" 
+        height="120" 
+        scrolling="no" 
+        frameborder="no" 
+        allow="autoplay"
+        src="https://w.soundcloud.com/player/?url=${encodeURIComponent(data.trackUrl)}">
       </iframe>
     `;
 
     document.getElementById("repostActions").style.display = "block";
 
-    // Show/hide comment box
-    document.getElementById("commentBoxToggle").addEventListener("change", (e) => {
-      document.getElementById("commentText").style.display = e.target.checked ? "block" : "none";
+    // ✅ Handle comment toggle
+    const commentToggle = document.getElementById("commentBoxToggle");
+    const commentText = document.getElementById("commentText");
+    commentToggle.addEventListener("change", () => {
+      commentText.style.display = commentToggle.checked ? "block" : "none";
     });
 
-    // Confirm repost button
-    document.getElementById("submitRepost").addEventListener("click", async () => {
+    // ✅ Submit repost
+    const submitBtn = document.getElementById("submitRepost");
+    submitBtn.onclick = async () => {
       const liked = document.getElementById("likeTrack").checked;
-      const leaveComment = document.getElementById("commentBoxToggle").checked;
-      const commentText = leaveComment ? document.getElementById("commentText").value.trim() : "";
-
-      const payload = {
-        userId: user.uid,
-        campaignId,
-        liked,
-        comment: commentText
-      };
+      const comment = commentToggle.checked ? commentText.value.trim() : null;
 
       try {
+        // 🎛️ Radio static effect
+        document.getElementById("radioLoading").style.display = "block";
+        document.getElementById("radioSound").play();
+
         const res = await fetch("https://us-central1-trackrepost-921f8.cloudfunctions.net/processRepost", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(payload)
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: user.uid,
+            campaignId,
+            liked,
+            comment,
+            earnedCredits: 1 + (liked ? 1 : 0) + (comment ? 2 : 0),
+          }),
         });
 
-        const data = await res.json();
-        if (res.ok && data.success) {
-          document.getElementById("message").textContent = "✅ Repost successful! Credits updated.";
-          document.getElementById("radioSound").play();
-          document.getElementById("radioLoading").style.display = "block";
+        const json = await res.json();
+        if (json.success) {
+          document.getElementById("message").textContent =
+            `✅ Repost complete! You earned ${json.earned || "credits"} credits.`;
         } else {
-          throw new Error(data.error || "Repost failed.");
+          throw new Error(json.error || "Unknown error");
         }
       } catch (err) {
         console.error("❌ Repost failed:", err);
-        document.getElementById("message").textContent = "❌ Repost failed. Try again.";
+        document.getElementById("message").textContent = `❌ Repost failed: ${err.message}`;
+      } finally {
+        document.getElementById("radioLoading").style.display = "none";
       }
-    });
-
+    };
   } catch (err) {
-    console.error("Error loading campaign:", err);
-    document.getElementById("message").textContent = "❌ Failed to load campaign.";
+    console.error("❌ Error loading repost UI:", err);
+    document.getElementById("message").textContent =
+      "❌ Failed to load campaign data.";
   }
 });
+
 
 
 
