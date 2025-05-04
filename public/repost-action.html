@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Repost Track</title>
+  <title>🎶 Repost Track | TrackRepost</title>
   <link rel="stylesheet" href="styles.css" />
   <link rel="icon" href="/images/favicon.png" type="image/png" />
 
@@ -11,14 +11,74 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-functions.js"></script>
 
-  <!-- Firebase Config -->
+  <!-- Firebase Config + Init -->
   <script src="/js/firebaseConfig.js"></script>
   <script src="/js/firebase-init.js"></script>
 
   <!-- Header -->
   <script type="module" src="/js/header.js"></script>
+
+  <style>
+    body {
+      background-color: #111;
+      color: #fff;
+      font-family: 'Segoe UI', sans-serif;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: auto;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 80px;
+      margin-top: 10px;
+      background: #1c1c1c;
+      color: #fff;
+      border: 1px solid #444;
+      border-radius: 6px;
+      padding: 10px;
+    }
+
+    button {
+      background-color: #ff9900;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-size: 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+
+    button:hover {
+      background-color: #e88a00;
+    }
+
+    iframe {
+      border-radius: 10px;
+      margin-top: 10px;
+    }
+
+    #message {
+      margin-top: 20px;
+      font-weight: bold;
+    }
+
+    #radioLoading img {
+      animation: radio-spin 0.6s infinite alternate;
+    }
+
+    @keyframes radio-spin {
+      from { transform: rotate(-10deg); }
+      to { transform: rotate(10deg); }
+    }
+  </style>
 </head>
 <body>
   <div class="container">
@@ -26,9 +86,9 @@
     <div id="campaignInfo"></div>
 
     <div id="repostActions" style="display:none;">
-      <label><input type="checkbox" id="likeTrack" checked /> Like Track (1 credit)</label><br>
-      <label><input type="checkbox" id="commentBoxToggle" /> Leave a Comment (2 credits)</label><br>
-      <textarea id="commentText" style="display:none;" placeholder="Enter comment..."></textarea><br>
+      <label><input type="checkbox" id="likeTrack" checked /> 👍 Like Track (1 credit)</label><br><br>
+      <label><input type="checkbox" id="commentBoxToggle" /> 💬 Leave a Comment (2 credits)</label><br>
+      <textarea id="commentText" style="display:none;" placeholder="Write your comment here..."></textarea><br>
       <button id="submitRepost">✅ Confirm Repost</button>
     </div>
 
@@ -36,11 +96,12 @@
 
     <!-- 🎛️ Radio Visual -->
     <div id="radioLoading" style="display:none; margin-top:20px;">
-      <img src="/images/radio-dial.png" alt="Tuning..." style="width:50px; animation: radio-spin 1s infinite alternate;">
+      <img src="/images/radio-dial.png" alt="Tuning..." style="width:60px;">
       <audio id="radioSound" src="/sounds/radio-static.wav" preload="auto"></audio>
     </div>
   </div>
 
+  <!-- Script -->
   <script src="/js/repost-action.js"></script>
 </body>
 </html>
