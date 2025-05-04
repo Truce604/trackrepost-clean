@@ -19,8 +19,32 @@
 
   <!-- Header -->
   <script type="module" src="/js/header.js"></script>
+
+  <style>
+    #radioLoading img {
+      animation: radio-spin 1s infinite alternate;
+    }
+
+    @keyframes radio-spin {
+      from { transform: rotate(-5deg); }
+      to { transform: rotate(5deg); }
+    }
+
+    textarea {
+      width: 100%;
+      max-width: 400px;
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 6px;
+      background: #222;
+      color: #fff;
+      border: 1px solid #555;
+    }
+  </style>
 </head>
 <body>
+  <div id="site-header"></div>
+
   <div class="container">
     <h1 id="campaignTitle">Loading...</h1>
     <div id="campaignInfo"></div>
@@ -34,9 +58,9 @@
 
     <p id="message"></p>
 
-    <!-- 🎻️ Radio Visual -->
+    <!-- 🎛️ Radio Visual -->
     <div id="radioLoading" style="display:none; margin-top:20px;">
-      <img src="/images/radio-dial.png" alt="Tuning..." style="width:50px; animation: radio-spin 1s infinite alternate;">
+      <img src="/images/radio-dial.png" alt="Tuning..." style="width:50px;">
       <audio id="radioSound" src="/sounds/radio-static.wav" preload="auto"></audio>
     </div>
   </div>
