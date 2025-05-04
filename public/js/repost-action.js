@@ -1,97 +1,92 @@
-// ✅ Wait for DOM to fully load
+// /js/repost-action.js
+
 document.addEventListener("DOMContentLoaded", async () => {
   const urlParams = new URLSearchParams(window.location.search);
   const campaignId = urlParams.get("campaignId");
 
   if (!campaignId) {
-    document.body.innerHTML = "<h2 style='color: red;'>❌ Missing campaignId in URL. Please access this page from the Explore section.</h2>";
+    document.getElementById("message").textContent = "❌ Missing campaignId in URL. Please access from the Explore page.";
     throw new Error("Missing campaignId in URL.");
   }
 
-  const campaignTitle = document.getElementById("campaignTitle");
-  const campaignInfo = document.getElementById("campaignInfo");
-  const likeEl = document.getElementById("likeTrack");
-  const commentToggle = document.getElementById("commentBoxToggle");
-  const commentBox = document.getElementById("commentText");
-  const submitBtn = document.getElementById("submitRepost");
-  const messageEl = document.getElementById("message");
-  const actionsEl = document.getElementById("repostActions");
-  const radioLoading = document.getElementById("radioLoading");
-  const radioSound = document.getElementById("radioSound");
-
-  // ✅ Load Campaign
-  try {
-    const doc = await db.collection("campaigns").doc(campaignId).get();
-    if (!doc.exists) {
-      campaignTitle.textContent = "Campaign not found.";
-      return;
-    }
-
-    const data = doc.data();
-    campaignTitle.textContent = data.title || "Untitled Campaign";
-    campaignInfo.innerHTML = `
-      <p>🎵 Genre: ${data.genre}</p>
-      <p>🎯 Credits Left: ${data.credits}</p>
-      <p>👤 Artist: ${data.artist || "Unknown"}</p>
-      <p><a href="${data.trackUrl}" target="_blank">🔗 SoundCloud Link</a></p>
-    `;
-
-    actionsEl.style.display = "block";
-  } catch (err) {
-    campaignTitle.textContent = "Failed to load campaign.";
-    console.error("❌ Error loading campaign:", err);
+  const user = auth.currentUser;
+  if (!user) {
+    document.getElementById("message").textContent = "⚠️ Please sign in first.";
     return;
   }
 
-  // ✅ Comment toggle behavior
-  commentToggle.addEventListener("change", () => {
-    commentBox.style.display = commentToggle.checked ? "block" : "none";
-  });
-
-  // ✅ Submit Repost
-  submitBtn.onclick = async () => {
-    const user = auth.currentUser;
-    if (!user) {
-      alert("⚠️ Please sign in first.");
+  try {
+    const doc = await db.collection("campaigns").doc(campaignId).get();
+    if (!doc.exists) {
+      document.getElementById("message").textContent = "❌ Campaign not found.";
       return;
     }
 
-    const liked = likeEl.checked;
-    const comment = commentToggle.checked ? commentBox.value.trim() : null;
+    const campaign = doc.data();
 
-    messageEl.textContent = "";
-    radioLoading.style.display = "block";
-    radioSound.currentTime = 0;
-    radioSound.play();
-
-    try {
-      const response = await fetch("https://us-central1-trackrepost-921f8.cloudfunctions.net/processRepost", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: user.uid,
-          campaignId,
-          liked,
-          comment,
-          earnedCredits: 1 + (liked ? 1 : 0) + (comment ? 2 : 0)
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) throw new Error(result.error || "Failed to repost.");
-
-      messageEl.textContent = `✅ Repost successful! You earned ${result.earnedCredits || "credits"}!`;
-      actionsEl.style.display = "none";
-    } catch (err) {
-      console.error("❌ Repost failed:", err);
-      messageEl.textContent = "❌ Repost failed. Try again later.";
-    } finally {
-      radioLoading.style.display = "none";
-      radioSound.pause();
+    if (campaign.owner === user.uid) {
+      document.getElementById("message").textContent = "⚠️ You cannot repost your own campaign.";
+      return;
     }
-  };
+
+    document.getElementById("campaignTitle").textContent = campaign.title || "Untitled Campaign";
+    document.getElementById("campaignInfo").innerHTML = `
+      <p>🎵 Genre: ${campaign.genre}</p>
+      <p>💰 Credits left: ${campaign.credits}</p>
+      <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
+        src="https://w.soundcloud.com/player/?url=${encodeURIComponent(campaign.trackUrl)}">
+      </iframe>
+    `;
+
+    document.getElementById("repostActions").style.display = "block";
+
+    // Show/hide comment box
+    document.getElementById("commentBoxToggle").addEventListener("change", (e) => {
+      document.getElementById("commentText").style.display = e.target.checked ? "block" : "none";
+    });
+
+    // Confirm repost button
+    document.getElementById("submitRepost").addEventListener("click", async () => {
+      const liked = document.getElementById("likeTrack").checked;
+      const leaveComment = document.getElementById("commentBoxToggle").checked;
+      const commentText = leaveComment ? document.getElementById("commentText").value.trim() : "";
+
+      const payload = {
+        userId: user.uid,
+        campaignId,
+        liked,
+        comment: commentText
+      };
+
+      try {
+        const res = await fetch("https://us-central1-trackrepost-921f8.cloudfunctions.net/processRepost", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        if (res.ok && data.success) {
+          document.getElementById("message").textContent = "✅ Repost successful! Credits updated.";
+          document.getElementById("radioSound").play();
+          document.getElementById("radioLoading").style.display = "block";
+        } else {
+          throw new Error(data.error || "Repost failed.");
+        }
+      } catch (err) {
+        console.error("❌ Repost failed:", err);
+        document.getElementById("message").textContent = "❌ Repost failed. Try again.";
+      }
+    });
+
+  } catch (err) {
+    console.error("Error loading campaign:", err);
+    document.getElementById("message").textContent = "❌ Failed to load campaign.";
+  }
 });
+
 
 
 
