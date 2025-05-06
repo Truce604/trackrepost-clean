@@ -1,10 +1,13 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const cors = require("cors");
+
+// ✅ Init only once
 admin.initializeApp();
 const db = admin.firestore();
 const corsHandler = cors({ origin: true });
 
+// ✅ Repost Function (with full transaction + error handling)
 exports.processRepost = functions.https.onRequest((req, res) => {
   corsHandler(req, res, async () => {
     if (req.method !== "POST") {
@@ -75,4 +78,5 @@ exports.processRepost = functions.https.onRequest((req, res) => {
     }
   });
 });
+
 
