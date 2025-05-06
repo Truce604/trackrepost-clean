@@ -1,4 +1,6 @@
 {
+  "main": "index.js",
+  "type": "commonjs",
   "engines": {
     "node": "20"
   },
@@ -11,3 +13,4 @@
     "uuid": "^9.0.0"
   }
 }
+
