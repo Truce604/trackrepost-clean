@@ -6,6 +6,7 @@ admin.initializeApp();
 const db = admin.firestore();
 const corsHandler = cors({ origin: true });
 
+// ✅ Repost Function
 exports.processRepost = functions.https.onRequest((req, res) => {
   corsHandler(req, res, async () => {
     if (req.method !== "POST") {
@@ -27,28 +28,34 @@ exports.processRepost = functions.https.onRequest((req, res) => {
 
       const campaign = campaignSnap.data();
       if (campaign.userId === userId) {
-        return res.status(403).json({ error: "Can't repost your own campaign" });
+        return res.status(403).json({ error: "You cannot repost your own campaign" });
       }
 
-      const earnedCredits = 1 + (liked ? 1 : 0) + (comment ? 2 : 0);
+      const repostRef = db.collection("reposts").doc(`${userId}_${campaignId}`);
+      const repostSnap = await repostRef.get();
+      if (repostSnap.exists) {
+        return res.status(409).json({ error: "You already reposted this campaign" });
+      }
+
+      const userRef = db.collection("users").doc(userId);
+      const userSnap = await userRef.get();
+      const userData = userSnap.exists ? userSnap.data() : {};
+      const followers = userData.soundcloud?.followers || 0;
+      const followerBonus = Math.floor(followers / 100);
+
+      const earnedCredits = 1 + (liked ? 1 : 0) + (comment ? 2 : 0) + followerBonus;
+
       if (campaign.credits < earnedCredits) {
-        return res.status(400).json({ error: "Not enough campaign credits" });
-      }
-
-      const repostId = `${userId}_${campaignId}`;
-      const repostRef = db.collection("reposts").doc(repostId);
-      const existingRepost = await repostRef.get();
-      if (existingRepost.exists) {
-        return res.status(409).json({ error: "Already reposted" });
+        return res.status(400).json({ error: "Campaign does not have enough credits" });
       }
 
       await db.runTransaction(async (tx) => {
         tx.set(repostRef, {
           userId,
           campaignId,
+          trackUrl: campaign.trackUrl,
           liked: !!liked,
           comment: comment || "",
-          trackUrl: campaign.trackUrl,
           timestamp: admin.firestore.FieldValue.serverTimestamp(),
           prompted: false,
         });
@@ -57,7 +64,7 @@ exports.processRepost = functions.https.onRequest((req, res) => {
           credits: admin.firestore.FieldValue.increment(-earnedCredits),
         });
 
-        tx.update(db.collection("users").doc(userId), {
+        tx.update(userRef, {
           credits: admin.firestore.FieldValue.increment(earnedCredits),
         });
 
@@ -72,7 +79,7 @@ exports.processRepost = functions.https.onRequest((req, res) => {
 
       return res.status(200).json({ success: true, earnedCredits });
     } catch (err) {
-      console.error("🔥 Repost error:", err);
+      console.error("❌ Repost error:", err);
       return res.status(500).json({ error: "Internal Server Error" });
     }
   });
