@@ -3,44 +3,122 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Submit Campaign - TrackRepost</title>
+  <title>📢 Submit Campaign | TrackRepost</title>
   <link rel="stylesheet" href="styles.css" />
+
+  <!-- ✅ Favicons -->
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
+  <link rel="manifest" href="/images/site.webmanifest">
+  <link rel="shortcut icon" href="/images/favicon.ico">
 
   <!-- ✅ Firebase Compat SDKs -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
-  <!-- ✅ Your Firebase Config -->
+  <!-- ✅ Firebase Config + Init -->
   <script src="/js/firebaseConfig.js"></script>
+  <script src="/js/firebase-init.js"></script>
+
+  <!-- ✅ Header Component -->
+  <script type="module" src="/js/header.js"></script>
+
+  <style>
+    body {
+      background-color: #111;
+      color: #fff;
+      font-family: 'Segoe UI', sans-serif;
+      padding: 20px;
+    }
+
+    h1 {
+      color: #ff9900;
+      text-align: center;
+    }
+
+    p {
+      text-align: center;
+    }
+
+    .campaign-form {
+      max-width: 500px;
+      margin: 30px auto;
+      background-color: #1c1c1c;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(255, 153, 0, 0.3);
+    }
+
+    .campaign-form label {
+      display: block;
+      margin-top: 15px;
+      font-weight: bold;
+    }
+
+    .campaign-form input {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border-radius: 6px;
+      border: 1px solid #444;
+      background-color: #222;
+      color: white;
+    }
+
+    #submitBtn {
+      background-color: #ff9900;
+      color: #000;
+      border: none;
+      padding: 12px;
+      margin-top: 20px;
+      border-radius: 6px;
+      width: 100%;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    #submitBtn:hover {
+      background-color: #e88a00;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 40px;
+      font-size: 14px;
+      color: #aaa;
+    }
+  </style>
 </head>
+
 <body>
-  <header>
-    <h1>📢 Submit a Campaign</h1>
-    <p>Welcome! You have <strong id="creditBalance">...</strong> credits.</p>
-  </header>
+  <div id="site-header"></div>
 
-  <main>
-    <form id="campaignForm" class="campaign-form">
-      <label for="trackUrl">SoundCloud Track URL</label>
-      <input type="url" id="trackUrl" placeholder="https://soundcloud.com/artist/track" required />
+  <h1>📢 Submit a Campaign</h1>
+  <p>You have <strong id="creditBalance">...</strong> credits available.</p>
 
-      <label for="genre">Genre</label>
-      <input type="text" id="genre" placeholder="e.g. Hip-Hop, EDM" required />
+  <form id="campaignForm" class="campaign-form">
+    <label for="trackUrl">🎵 SoundCloud Track URL</label>
+    <input type="url" id="trackUrl" placeholder="https://soundcloud.com/artist/track" required />
 
-      <label for="credits">Credits to Spend</label>
-      <input type="number" id="credits" placeholder="e.g. 500" min="1" required />
+    <label for="genre">🎧 Genre</label>
+    <input type="text" id="genre" placeholder="Auto-detected or enter manually" required />
 
-      <button type="submit" id="submitBtn">Submit Campaign</button>
-    </form>
-  </main>
+    <label for="credits">💰 Credits to Spend</label>
+    <input type="number" id="credits" placeholder="e.g. 500" min="1" required />
+
+    <button type="submit" id="submitBtn">🚀 Submit Campaign</button>
+  </form>
 
   <footer>
-    <p>🚀 TrackRepost – Launch your next hit</p>
+    <p>© 2025 TrackRepost. All rights reserved.</p>
   </footer>
 
-  <!-- ✅ Submit Campaign Script -->
+  <!-- ✅ Submit Logic -->
   <script src="/js/submit-campaign.js"></script>
 </body>
 </html>
+
 
