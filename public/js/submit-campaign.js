@@ -1,3 +1,5 @@
+// ✅ submit-campaign.js
+
 let isSubmitting = false;
 
 firebase.auth().onAuthStateChanged(async (user) => {
@@ -13,8 +15,9 @@ firebase.auth().onAuthStateChanged(async (user) => {
   const userRef = firebase.firestore().collection("users").doc(user.uid);
   const userSnap = await userRef.get();
   const userData = userSnap.data();
+  const currentCredits = userData.credits || 0;
 
-  creditDisplay.textContent = userData.credits || 0;
+  creditDisplay.textContent = currentCredits;
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -28,19 +31,19 @@ firebase.auth().onAuthStateChanged(async (user) => {
     const genre = document.getElementById("genre").value.trim();
     const credits = parseInt(document.getElementById("credits").value);
 
-    if (!trackUrl || !genre || isNaN(credits)) {
-      alert("Please fill in all fields.");
+    if (!trackUrl || !genre || isNaN(credits) || credits <= 0) {
+      alert("Please fill in all fields with valid values.");
       resetButton();
       return;
     }
 
-    if ((userData.credits || 0) < credits) {
-      alert(`Not enough credits. You only have ${userData.credits} credits.`);
+    if (currentCredits < credits) {
+      alert(`Not enough credits. You only have ${currentCredits} credits.`);
       resetButton();
       return;
     }
 
-    // 🎧 Fetch SoundCloud metadata via oEmbed
+    // 🎧 Try to fetch SoundCloud metadata
     let title = "Untitled Track";
     let artworkUrl = "/images/default-art.png";
 
@@ -63,12 +66,12 @@ firebase.auth().onAuthStateChanged(async (user) => {
         trackUrl,
         genre,
         credits,
+        remainingCredits: credits,
         title,
         artworkUrl,
         artist,
         active: true,
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-        remainingCredits: credits,
         reposts: 0
       });
 
@@ -80,7 +83,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
       window.location.href = "dashboard.html";
     } catch (error) {
       console.error("❌ Error submitting campaign:", error);
-      alert("Something went wrong. Try again.");
+      alert("Something went wrong. Please try again.");
       resetButton();
     }
   });
