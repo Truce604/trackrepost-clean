@@ -1,4 +1,4 @@
-// /js/explore-campaigns.js
+// ✅ /js/explore-campaigns.js (Launch Ready with localStorage fallback)
 firebase.auth().onAuthStateChanged(async (user) => {
   if (!user) return;
 
@@ -21,7 +21,6 @@ firebase.auth().onAuthStateChanged(async (user) => {
       const data = doc.data();
       const id = doc.id;
 
-      // Hide user's own campaign
       if (data.owner === user.uid) return;
 
       const campaignCard = document.createElement("div");
@@ -43,7 +42,9 @@ firebase.auth().onAuthStateChanged(async (user) => {
           <p>👤 ${data.artist || "Unknown Artist"}</p>
           <p>🎵 ${data.genre || "Genre"}</p>
           <p>💰 ${data.credits || 0} Credits Available</p>
-          <a class="repost-btn" href="/repost-action.html?campaignId=${id}">Repost This</a>
+          <a class="repost-btn" href="/repost-action.html?campaignId=${id}" onclick="localStorage.setItem('lastCampaignId', '${id}')">
+            Repost This
+          </a>
         </div>
       `;
 
@@ -54,4 +55,3 @@ firebase.auth().onAuthStateChanged(async (user) => {
     campaignList.innerHTML = "<p>❌ Failed to load campaigns.</p>";
   }
 });
-
