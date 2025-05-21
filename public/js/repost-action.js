@@ -1,99 +1,122 @@
-// ✅ /js/repost-action.js (Launch Ready)
-window.addEventListener("DOMContentLoaded", async () => {
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+import {
+  getFirestore, doc, getDoc, updateDoc, setDoc, collection, addDoc, query, where, getDocs, Timestamp,
+} from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+import {
+  getAuth, onAuthStateChanged,
+} from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+
+function getCurrent12HourWindow() {
+  const now = new Date();
+  const localHour = now.getHours();
+  const resetHour = localHour < 12 ? 0 : 12;
+  const resetDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), resetHour, 0, 0);
+  return Timestamp.fromDate(resetDate);
+}
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    alert("Please log in to repost.");
+    window.location.href = "/index.html";
+    return;
+  }
+
   const urlParams = new URLSearchParams(window.location.search);
-  let campaignId = urlParams.get("campaignId");
-
-  // 🔁 Fallback if missing from URL
+  const campaignId = urlParams.get("campaignId");
   if (!campaignId) {
-    campaignId = localStorage.getItem("lastCampaignId");
-  }
-
-  if (!campaignId) {
-    document.getElementById("message").textContent = "❌ Missing campaign ID. Please access this page from Explore.";
+    alert("Missing campaign ID.");
     return;
   }
 
-  const campaignTitle = document.getElementById("campaignTitle");
-  const campaignInfo = document.getElementById("campaignInfo");
-  const repostActions = document.getElementById("repostActions");
-  const likeTrack = document.getElementById("likeTrack");
-  const commentBoxToggle = document.getElementById("commentBoxToggle");
-  const commentText = document.getElementById("commentText");
-  const submitBtn = document.getElementById("submitRepost");
-  const message = document.getElementById("message");
-  const radioSound = document.getElementById("radioSound");
-  const radioLoading = document.getElementById("radioLoading");
-
-  let campaignData = null;
-
-  try {
-    const doc = await db.collection("campaigns").doc(campaignId).get();
-    if (!doc.exists) throw new Error("Campaign not found");
-
-    campaignData = doc.data();
-    campaignTitle.textContent = campaignData.title || "Untitled Campaign";
-    campaignInfo.innerHTML = `
-      <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
-        src="https://w.soundcloud.com/player/?url=${encodeURIComponent(campaignData.trackUrl)}">
-      </iframe>
-      <p>🎯 Genre: ${campaignData.genre}</p>
-      <p>💰 Available Credits: ${campaignData.credits}</p>
-    `;
-    repostActions.style.display = "block";
-  } catch (err) {
-    message.textContent = `❌ ${err.message}`;
+  const campaignRef = doc(db, "campaigns", campaignId);
+  const campaignSnap = await getDoc(campaignRef);
+  if (!campaignSnap.exists()) {
+    alert("Campaign not found.");
     return;
   }
 
-  commentBoxToggle.addEventListener("change", () => {
-    commentText.style.display = commentBoxToggle.checked ? "block" : "none";
+  const campaignData = campaignSnap.data();
+  const userId = user.uid;
+  const now = Timestamp.now();
+  const windowStart = getCurrent12HourWindow();
+
+  // Prevent reposting same campaign twice
+  const repostsRef = collection(db, "reposts");
+  const duplicateQuery = query(
+    repostsRef,
+    where("userId", "==", userId),
+    where("campaignId", "==", campaignId)
+  );
+  const duplicateSnap = await getDocs(duplicateQuery);
+  if (!duplicateSnap.empty) {
+    alert("You’ve already reposted this track.");
+    return;
+  }
+
+  // Check 12-hour repost limit
+  const limitQuery = query(
+    repostsRef,
+    where("userId", "==", userId),
+    where("timestamp", ">=", windowStart),
+    where("prompted", "==", false)
+  );
+  const repostsSnap = await getDocs(limitQuery);
+  if (repostsSnap.size >= 10) {
+    alert("You've hit your 12-hour repost limit.");
+    return;
+  }
+
+  const userRef = doc(db, "users", userId);
+  const userSnap = await getDoc(userRef);
+  const userData = userSnap.data();
+  const followers = userData?.soundcloud?.followers || 0;
+
+  const creditsEarned = Math.floor(followers / 100);
+  const likeChecked = document.getElementById("likeCheckbox")?.checked;
+  const commentChecked = document.getElementById("commentCheckbox")?.checked;
+  const totalEarned = creditsEarned + (likeChecked ? 1 : 0) + (commentChecked ? 2 : 0);
+
+  // Check campaign has enough credits
+  const ownerRef = doc(db, "users", campaignData.userId);
+  const ownerSnap = await getDoc(ownerRef);
+  const ownerData = ownerSnap.data();
+  if (ownerData.credits < totalEarned) {
+    alert("Campaign owner does not have enough credits.");
+    return;
+  }
+
+  // Update credits
+  await updateDoc(userRef, {
+    credits: (userData.credits || 0) + totalEarned
+  });
+  await updateDoc(ownerRef, {
+    credits: ownerData.credits - totalEarned
   });
 
-  submitBtn.onclick = async () => {
-    message.textContent = "⏳ Submitting repost...";
-    const user = firebase.auth().currentUser;
-    if (!user) return (message.textContent = "⚠️ Please sign in.");
+  // Log the repost
+  await addDoc(repostsRef, {
+    userId,
+    campaignId,
+    trackUrl: campaignData.trackUrl,
+    timestamp: now,
+    prompted: false,
+    earnedCredits: totalEarned
+  });
 
-    const liked = likeTrack.checked;
-    const comment = commentBoxToggle.checked ? commentText.value.trim() : null;
-    const earnedCredits = 1 + (liked ? 1 : 0) + (comment ? 2 : 0);
-
-    // 📻 Play radio sound + loading spin
-    radioLoading.style.display = "block";
-    radioSound.currentTime = 0;
-    radioSound.play();
-
-    try {
-      const response = await fetch(
-        "https://us-central1-trackrepost-921f8.cloudfunctions.net/processRepost",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            userId: user.uid,
-            campaignId,
-            earnedCredits,
-            liked,
-            comment,
-          }),
-        }
-      );
-
-      const data = await response.json();
-      if (data.success) {
-        message.textContent = `✅ Repost complete! You earned ${data.earnedCredits} credits.`;
-        localStorage.removeItem("lastCampaignId");
-      } else {
-        message.textContent = `❌ Failed: ${data.error || "Unknown error"}`;
-      }
-    } catch (err) {
-      console.error("❌ Repost failed:", err);
-      message.textContent = `❌ Repost failed: ${err.message}`;
-    } finally {
-      radioLoading.style.display = "none";
-      radioSound.pause();
-    }
-  };
+  // Confirmation
+  document.getElementById("repostStatus").innerText =
+    `✅ Reposted! You earned ${totalEarned} credits.`;
 });
