@@ -1,5 +1,6 @@
 import { buffer } from 'micro';
 import * as admin from 'firebase-admin';
+import { WebhooksHelper } from 'square';
 
 // Initialize Firebase Admin
 if (!admin.apps.length) {
@@ -12,6 +13,9 @@ export const config = {
   },
 };
 
+const SQUARE_SIGNATURE_KEY = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY; // Ensure this environment variable is set
+const NOTIFICATION_URL = 'https://yourdomain.com/api/webhook'; // Replace with your actual webhook URL
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).send('Method Not Allowed');
@@ -19,6 +23,21 @@ export default async function handler(req, res) {
 
   try {
     const rawBody = await buffer(req);
+    const signature = req.headers['x-square-hmacsha256-signature'];
+
+    // Verify the webhook signature
+    const isValid = WebhooksHelper.verifySignature({
+      requestBody: rawBody.toString(),
+      signatureHeader: signature,
+      signatureKey: SQUARE_SIGNATURE_KEY,
+      notificationUrl: NOTIFICATION_URL,
+    });
+
+    if (!isValid) {
+      console.error('❌ Invalid webhook signature.');
+      return res.status(400).send('Invalid signature');
+    }
+
     const event = JSON.parse(rawBody.toString());
 
     console.log('🔔 Webhook event received:', event.type);
