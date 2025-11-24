@@ -1,97 +1,39 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DJ News – TrackRepost</title>
-  <link rel="stylesheet" href="styles.css" />
-  <link rel="icon" href="/favicon.ico" type="image/x-icon">
+<script>
+  const feeds = [
+    "https://djmag.com/rss.xml",
+    "https://mixmag.net/rss",
+    "https://edm.com/.rss/full/",
+    "https://www.edmidentity.com/feed/",
+    "https://www.dancingastronaut.com/feed/",
+    "https://ra.co/rss"
+  ];
 
-  <style>
-    body {
-      background: #0d0d0d;
-      color: #fff;
-      font-family: Arial, sans-serif;
-      padding: 20px;
-    }
+  async function loadNews() {
+    const container = document.getElementById("news-container");
 
-    h1 {
-      text-align: center;
-      margin-bottom: 20px;
-      color: #ffa500;
-    }
+    for (const feed of feeds) {
+      try {
+        const url = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed)}`;
+        const res = await fetch(url);
+        const data = await res.json();
 
-    .news-card {
-      background: #1a1a1a;
-      padding: 20px;
-      border-radius: 10px;
-      margin-bottom: 20px;
-      border-left: 4px solid #ffa500;
-    }
+        if (!data.items) continue;
 
-    a {
-      color: #ffa500;
-      text-decoration: none;
-    }
-
-    a:hover {
-      text-decoration: underline;
-    }
-  </style>
-</head>
-<body>
-
-  <h1>🔥 DJ & EDM News</h1>
-  <p style="text-align:center;">Updated automatically every day</p>
-
-  <div id="news-container"></div>
-
-  <script>
-    // RSS feeds for DJ sites
-    const feeds = [
-      "https://djmag.com/rss.xml",
-      "https://mixmag.net/rss",
-      "https://edm.com/.rss/full/",
-      "https://www.edmidentity.com/feed/",
-      "https://www.dancingastronaut.com/feed/",
-      "https://ra.co/rss"
-    ];
-
-    async function loadNews() {
-      const container = document.getElementById("news-container");
-
-      for (const feed of feeds) {
-        try {
-          const url = `https://api.allorigins.win/get?url=${encodeURIComponent(feed)}`;
-          const res = await fetch(url);
-          const data = await res.json();
-
-          const parser = new DOMParser();
-          const xml = parser.parseFromString(data.contents, "text/xml");
-          const items = xml.querySelectorAll("item");
-
-          items.forEach(item => {
-            const title = item.querySelector("title")?.textContent;
-            const link = item.querySelector("link")?.textContent;
-            const desc = item.querySelector("description")?.textContent;
-
-            const card = document.createElement("div");
-            card.className = "news-card";
-            card.innerHTML = `
-              <h3><a href="${link}" target="_blank">${title}</a></h3>
-              <p>${desc.substring(0, 250)}...</p>
-            `;
-            container.appendChild(card);
-          });
-        } catch (e) {
-          console.error("Error loading feed:", feed, e);
-        }
+        data.items.forEach(article => {
+          const card = document.createElement("div");
+          card.className = "news-card";
+          card.innerHTML = `
+            <h3><a href="${article.link}" target="_blank">${article.title}</a></h3>
+            <p>${article.description.substring(0, 250)}...</p>
+          `;
+          container.appendChild(card);
+        });
+      } catch (err) {
+        console.error("Error loading feed:", feed, err);
       }
     }
+  }
 
-    loadNews();
-  </script>
-
-</body>
-</html>
+  loadNews();
+</script>
 
