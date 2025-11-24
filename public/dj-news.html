@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>DJ News – TrackRepost</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+
+  <!-- Firebase Compat -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+
+  <!-- Load Firebase Config -->
+  <script>
+    fetch("/js/firebaseConfig.js")
+      .then(res => res.text())
+      .then(text => {
+        eval(text);
+        firebase.initializeApp(window.firebaseConfig);
+        console.log("🔥 Firebase Loaded");
+      })
+      .catch(err => console.error("Config load error:", err));
+  </script>
+
+  <style>
+    body {
+      background-color: #0d0d0d;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 25px;
+      font-size: 2rem;
+    }
+
+    #news-container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .news-card {
+      background: #1a1a1a;
+      padding: 20px;
+      border-radius: 14px;
+      margin-bottom: 25px;
+      box-shadow: 0 0 10px rgba(255, 165, 0, 0.15);
+    }
+
+    .news-card img {
+      width: 100%;
+      border-radius: 10px;
+      margin-bottom: 12px;
+    }
+
+    .news-card h2 {
+      font-size: 1.3rem;
+      margin-bottom: 8px;
+    }
+
+    .news-card p {
+      opacity: 0.9;
+      line-height: 1.4;
+      margin-bottom: 12px;
+    }
+
+    .news-card a {
+      color: #ffa500;
+      font-weight: bold;
+    }
+
+    .source {
+      font-size: 0.9rem;
+      opacity: 0.6;
+    }
+
+    .back-link {
+      display: block;
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 1rem;
+      color: #ffa500;
+    }
+  </style>
+</head>
+
+<body>
+
+  <a class="back-link" href="dashboard.html">← Back to Dashboard</a>
+
+  <h1>📰 DJ & EDM News</h1>
+  <p style="text-align:center; opacity:0.8; margin-bottom: 20px;">
+    Updated automatically every 24 hours from DJMag, EDM.com, Mixmag, RA, YourEDM, Beatport & more.
+  </p>
+
+  <div id="news-container">
+    <p style="text-align:center;">Loading DJ news...</p>
+  </div>
+
+  <script src="/js/dj-news.js"></script>
+</body>
+</html>

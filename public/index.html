@@ -24,7 +24,8 @@
       })
       .catch(err => {
         console.error("❌ Firebase config missing or broken:", err);
-        document.getElementById("login-ui").innerHTML = "<p style='color:red;'>Firebase config error. Try again later.</p>";
+        const loginUI = document.getElementById("login-ui");
+        if (loginUI) loginUI.innerHTML = "<p style='color:red;'>Firebase config error. Try again later.</p>";
       });
 
     function initAuth() {
@@ -54,9 +55,9 @@
       };
 
       window.logout = () => {
-        auth.signOut().then(() => {
-          location.reload();
-        }).catch(err => console.error("❌ Logout error:", err));
+        auth.signOut()
+          .then(() => location.reload())
+          .catch(err => console.error("❌ Logout error:", err));
       };
     }
   </script>
@@ -108,8 +109,16 @@
       font-weight: bold;
       text-decoration: none;
     }
+
     a:hover {
       text-decoration: underline;
+    }
+
+    .link-list {
+      margin-top: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
   </style>
 </head>
@@ -119,15 +128,20 @@
     <h1>🔥 TrackRepost</h1>
     <p>The easiest way to grow your SoundCloud</p>
 
+    <!-- Login UI -->
     <div id="login-ui">
       <button onclick="login()">Sign in with Google</button>
     </div>
 
+    <!-- Logged In UI -->
     <div id="user-ui" class="hidden">
       <p id="welcome-text"></p>
       <button onclick="logout()">Logout</button>
-      <br><br>
-      <a href="dashboard.html">➡️ Go to Dashboard</a>
+
+      <div class="link-list">
+        <a href="dashboard.html">➡️ Go to Dashboard</a>
+        <a href="dj-news.html">📰 DJ News</a>
+      </div>
     </div>
   </div>
 
@@ -137,5 +151,3 @@
 
 </body>
 </html>
-
-

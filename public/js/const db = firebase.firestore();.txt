@@ -1,0 +1,37 @@
+const db = firebase.firestore();
+
+async function loadNews() {
+  const container = document.getElementById("news-container");
+  container.innerHTML = "<p>Loading DJ News...</p>";
+
+  try {
+    const snap = await db.collection("dj_news").orderBy("date", "desc").get();
+
+    if (snap.empty) {
+      container.innerHTML = "<p>No DJ news yet.</p>";
+      return;
+    }
+
+    container.innerHTML = "";
+
+    snap.forEach(doc => {
+      const data = doc.data();
+
+      const card = `
+        <div class="news-card">
+          <img src="${data.image}" alt="news">
+          <h2>${data.title}</h2>
+          <p>${data.excerpt}</p>
+          <a href="${data.url}" target="_blank">Read More</a>
+        </div>
+      `;
+
+      container.innerHTML += card;
+    });
+  } catch (error) {
+    container.innerHTML = "<p>Error loading news.</p>";
+    console.error(error);
+  }
+}
+
+loadNews();
