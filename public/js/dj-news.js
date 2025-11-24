@@ -1,54 +1,46 @@
-// Load DJ News from Firestore
-document.addEventListener("DOMContentLoaded", loadDJNews);
+// DJ News — works instantly, no backend needed
+const feeds = [
+  "https://djmag.com/rss.xml",
+  "https://mixmag.net/rss",
+  "https://edm.com/.rss/full/",
+  "https://www.edmidentity.com/feed/",
+  "https://www.dancingastronaut.com/feed/",
+  "https://ra.co/rss"
+];
 
-async function loadDJNews() {
-  const db = firebase.firestore();
+async function loadNews() {
   const container = document.getElementById("news-container");
-
   container.innerHTML = "<p style='text-align:center;'>Fetching news...</p>";
 
-  try {
-    const snap = await db.collection("dj_news")
-      .orderBy("date", "desc")
-      .limit(50)
-      .get();
+  for (const feed of feeds) {
+    try {
+      // Reliable proxy to bypass CORS
+      const response = await fetch(
+        "https://api.allorigins.win/raw?url=" + encodeURIComponent(feed)
+      );
+      const text = await response.text();
+      const parser = new DOMParser();
+      const xml = parser.parseFromString(text, "text/xml");
+      const items = xml.querySelectorAll("item");
 
-    if (snap.empty) {
-      container.innerHTML = "<p>No news found.</p>";
-      return;
+      items.forEach(item => {
+        const title = item.querySelector("title")?.textContent || "";
+        const link = item.querySelector("link")?.textContent || "";
+        const description = item.querySelector("description")?.textContent || "";
+
+        const card = document.createElement("div");
+        card.className = "news-card";
+        card.innerHTML = `
+          <h3><a href="${link}" target="_blank">${title}</a></h3>
+          <p>${description.substring(0, 200)}...</p>
+        `;
+        container.appendChild(card);
+      });
+    } catch (err) {
+      console.error("Feed failed:", feed, err);
     }
-
-    container.innerHTML = "";
-
-    snap.forEach(doc => {
-      const d = doc.data();
-
-      const card = `
-        <div class="news-card">
-          ${d.image ? `<img src="${d.image}" alt="News Image">` : ""}
-          <h2>${d.title}</h2>
-          <p>${d.excerpt || ""}</p>
-          <a href="${d.url}" target="_blank">Read full article →</a>
-          <br><br>
-          <span class="source">${d.source} • ${formatDate(d.date)}</span>
-        </div>
-      `;
-
-      container.innerHTML += card;
-    });
-
-  } catch (err) {
-    console.error("Error loading news:", err);
-    container.innerHTML = "<p>Error loading news. Try again later.</p>";
   }
 }
 
-function formatDate(timestamp) {
-  if (!timestamp) return "";
-  const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-  return date.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric"
-  });
-}
+loadNews();
+
