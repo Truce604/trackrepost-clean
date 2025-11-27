@@ -6,23 +6,23 @@
   <title>🎶 Repost Track | TrackRepost</title>
   <link rel="stylesheet" href="styles.css" />
 
-  <!-- ✅ Favicons -->
+  <!-- Favicons -->
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
   <link rel="manifest" href="/images/site.webmanifest">
   <link rel="shortcut icon" href="/images/favicon.ico">
 
-  <!-- ✅ Firebase SDKs -->
+  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
-  <!-- ✅ Firebase Config + Init -->
+  <!-- Firebase Config -->
   <script src="/js/firebaseConfig.js"></script>
   <script src="/js/firebase-init.js"></script>
 
-  <!-- ✅ Header -->
+  <!-- Header -->
   <script type="module" src="/js/header.js"></script>
 
   <style>
@@ -34,63 +34,60 @@
       text-align: center;
     }
 
-    .container {
-      max-width: 600px;
-      margin: auto;
-    }
-
+    .container { max-width: 600px; margin: auto; }
     textarea {
-      width: 100%;
-      min-height: 80px;
-      margin-top: 10px;
-      background: #1c1c1c;
-      color: #fff;
-      border: 1px solid #444;
-      border-radius: 6px;
-      padding: 10px;
+      width: 100%; min-height: 80px; margin-top: 10px;
+      background: #1c1c1c; color: #fff;
+      border: 1px solid #444; border-radius: 6px; padding: 10px;
     }
-
     button {
-      background-color: #ff9900;
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      font-size: 16px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: bold;
-      margin-top: 10px;
+      background-color: #ff9900; color: white;
+      border: none; padding: 10px 20px;
+      font-size: 16px; border-radius: 6px;
+      cursor: pointer; font-weight: bold; margin-top: 10px;
     }
+    button:hover { background-color: #e88a00; }
+    iframe { border-radius: 10px; margin-top: 10px; }
+    #message { margin-top: 20px; font-weight: bold; }
 
-    button:hover {
-      background-color: #e88a00;
-    }
-
-    iframe {
-      border-radius: 10px;
-      margin-top: 10px;
-    }
-
-    #message {
-      margin-top: 20px;
-      font-weight: bold;
-    }
-
-    #radioLoading img {
-      animation: radio-spin 0.6s infinite alternate;
-    }
-
+    #radioLoading img { animation: radio-spin 0.6s infinite alternate; }
     @keyframes radio-spin {
       from { transform: rotate(-10deg); }
-      to { transform: rotate(10deg); }
+      to   { transform: rotate(10deg); }
     }
+
+    /* Added missing styling container for campaign preview */
+    #campaignInfo {
+      margin-top: 20px;
+      padding: 20px;
+      background: #1a1a1a;
+      border-radius: 10px;
+    }
+
+    #campaignArtwork {
+      width: 100%;
+      max-width: 300px;
+      border-radius: 12px;
+      margin-bottom: 15px;
+    }
+
   </style>
 </head>
 <body>
   <div class="container">
-    <h1 id="campaignTitle">Loading...</h1>
-    <div id="campaignInfo"></div>
 
+    <h1 id="campaignTitle">Loading...</h1>
+
+    <!-- 🔥 Campaign display (fixed — previously missing) -->
+    <div id="campaignInfo" style="display:none;">
+      <img id="campaignArtwork" src="" alt="Artwork">
+      <p><strong>Artist:</strong> <span id="campaignArtist"></span></p>
+      <a id="campaignLink" href="#" target="_blank">
+        <button>▶️ Play Track</button>
+      </a>
+    </div>
+
+    <!-- 🎯 Repost Actions -->
     <div id="repostActions" style="display:none;">
       <label><input type="checkbox" id="likeTrack" checked /> 👍 Like Track (1 credit)</label><br><br>
       <label><input type="checkbox" id="commentBoxToggle" /> 💬 Leave a Comment (2 credits)</label><br>
@@ -100,18 +97,19 @@
 
     <p id="message"></p>
 
-    <!-- 🎛️ Radio Visual -->
+    <!-- Radio Loading Animation -->
     <div id="radioLoading" style="display:none; margin-top:20px;">
       <img src="/images/radio-dial.png" alt="Tuning..." style="width:60px;">
       <audio id="radioSound" src="/sounds/radio-static.wav" preload="auto"></audio>
     </div>
 
-    <!-- ✅ Required for repost-action.js -->
+    <!-- Needed for repost JS -->
     <div id="repost-container" style="margin-top: 40px;"></div>
   </div>
 
-  <!-- ✅ Repost Script -->
+  <!-- JS -->
   <script type="module" src="/js/repost-action.js"></script>
 </body>
 </html>
+
 
