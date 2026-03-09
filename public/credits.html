@@ -69,7 +69,7 @@
       background-color: #e88a00;
     }
 
-    /* New plugin sale card */
+    /* Plugin card */
     .plugin-card {
       background: #1c1c1c;
       border-radius: 12px;
@@ -100,6 +100,7 @@
       font-weight: bold;
       text-decoration: none;
       display: inline-block;
+      margin-top: 5px;
     }
     .plugin-card .buy-plugin-btn:hover {
       background-color: #ff3300;
@@ -115,38 +116,55 @@
     <p>Select a package to boost your music!</p>
 
     <div class="credits-container">
+      <!-- 500 Credits -->
       <div class="credit-card">
         <h2>500 Credits</h2>
         <p>💰 $24.99 CAD</p>
         <button class="buy-btn" onclick="startCheckout(2499, 500)">Buy 500</button>
       </div>
 
+      <!-- 1000 Credits -->
       <div class="credit-card">
         <h2>1000 Credits</h2>
         <p>💰 $34.99 CAD</p>
         <a href="https://square.link/u/WVdzubsu" target="_blank" class="buy-btn">Buy 1000</a>
       </div>
 
+      <!-- 2500 Credits -->
       <div class="credit-card">
         <h2>2500 Credits</h2>
         <p>💰 $79.99 CAD</p>
         <a href="https://square.link/u/1pNiZUso" target="_blank" class="buy-btn">Buy 2500</a>
       </div>
 
+      <!-- 5000 Credits -->
       <div class="credit-card">
         <h2>5000 Credits</h2>
         <p>💰 $139.99 CAD</p>
         <a href="https://square.link/u/xIcjDvkN" target="_blank" class="buy-btn">Buy 5000</a>
       </div>
 
-      <!-- NEW: VST3 Plugin Sale -->
+      <!-- Plugin Sale -->
       <div class="plugin-card">
         <h2>🔥 True Waveform 2 – VST3 Plugin</h2>
         <p>True Waveform 2 is a real-time DJ-style waveform visualizer for your DAW.<br>
            See the 3-band color system from CDJs and DJ software directly in your workflow — no audio changes, just instant visual feedback.</p>
-        <a href="https://square.link/u/PgfNRb7G" target="_blank" class="buy-plugin-btn">
+
+        <!-- Buy Plugin button -->
+        <a id="buy-plugin-btn" href="https://square.link/u/PgfNRb7G" target="_blank" class="buy-plugin-btn">
           Buy Plugin – $9.99
         </a>
+
+        <!-- Hidden download button -->
+        <br>
+        <a id="download-plugin-btn" href="https://firebasestorage.googleapis.com/v0/b/trackrepost-921f8.appspot.com/o/TrueWaveform2.zip?alt=media" 
+           download class="buy-plugin-btn" style="display:none; margin-top:10px;">
+          Download Plugin
+        </a>
+
+        <p id="plugin-msg" style="color:#ff9900; display:none; margin-top:10px; font-size:14px;">
+          ✅ Thanks for your purchase! Click below to download.
+        </p>
       </div>
     </div>
   </main>
@@ -156,6 +174,7 @@
   </footer>
 
   <script>
+    // Credits checkout logic
     async function startCheckout(amount, credits) {
       const user = firebase.auth().currentUser;
       if (!user) {
@@ -188,6 +207,16 @@
         alert('Failed to start checkout.');
       }
     }
+
+    // Plugin card logic: show download only after clicking Buy Plugin
+    const buyBtn = document.getElementById("buy-plugin-btn");
+    const downloadBtn = document.getElementById("download-plugin-btn");
+    const pluginMsg = document.getElementById("plugin-msg");
+
+    buyBtn.addEventListener("click", () => {
+      pluginMsg.style.display = "block";
+      downloadBtn.style.display = "inline-block";
+    });
   </script>
 </body>
 </html>
