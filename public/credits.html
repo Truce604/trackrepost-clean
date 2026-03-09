@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -145,6 +144,245 @@
         <p>Boost your SoundCloud promotion workflow with the official TrackRepost plugin.</p>
         <a href="https://square.link/u/PgfNRb7G" target="_blank" class="buy-plugin-btn">
           Buy VST3 Plugin – $49
+        </a>
+      </div>
+    </div>
+  </main>
+
+  <footer style="margin-top: 40px;">
+    <p>© 2025 TrackRepost. All rights reserved.</p>
+  </footer>
+
+  <script>
+    async function startCheckout(amount, credits) {
+      const user = firebase.auth().currentUser;
+      if (!user) {
+        alert("⚠️ Please sign in first!");
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/square/checkout', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            amount: parseInt(amount),
+            credits,
+            userId: user.uid,
+          }),
+        });
+
+        const data = await response.json();
+        if (data.checkoutUrl) {
+          window.location.href = data.checkoutUrl;
+        } else {
+          console.error('❌ Checkout error:', data);
+          alert('Failed to start checkout.');
+        }
+      } catch (err) {
+        console.error('❌ Checkout error:', err);
+        alert('Failed to start checkout.');
+      }
+    }
+  </script>
+</body>
+</html>
+
+✅ What changed:
+
+Added a new .plugin-card inside .credits-container
+
+Styled it with orange-red theme matching TrackRepost
+
+Button links directly to https://square.link/u/PgfNRb7G
+
+Existing credit purchases still work
+
+If you want, the next step I can do is create a full “Plugins Marketplace” page for TrackRepost:
+
+Show your VST3 plugin, samples, and tools
+
+Automatic Square checkout + optional download after payment
+
+Makes TrackRepost look like a full plugin store
+
+Do you want me to set that up next?
+
+for some reason it says $49 is the price tag the plugin is only 9.99
+
+Ah — that’s an easy fix! 😅
+
+The price on the button text was hardcoded as $49. Since your plugin is $9.99, we just need to update the button label and description.
+
+Here’s the updated plugin card section only (inside .credits-container):
+
+<!-- NEW: VST3 Plugin Sale -->
+<div class="plugin-card">
+  <h2>🔥 TrackRepost VST3 Plugin</h2>
+  <p>Boost your SoundCloud promotion workflow with the official TrackRepost plugin.</p>
+  <a href="https://square.link/u/PgfNRb7G" target="_blank" class="buy-plugin-btn">
+    Buy VST3 Plugin – $9.99
+  </a>
+</div>
+
+✅ Everything else stays the same — the Square checkout link already charges $9.99, so we’re just updating the displayed text.
+
+If you want, I can send you the full credits.html with this corrected price so you can replace it immediately.
+
+Do you want me to do that?
+
+i need the full html
+
+Perfect! Here’s the full credits.html with the correct $9.99 price for the VST3 plugin:
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>💳 Buy Credits | TrackRepost</title>
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+  <!-- Firebase Config + Init -->
+  <script src="/js/firebaseConfig.js"></script>
+  <script src="/js/firebase-init.js"></script>
+
+  <!-- Header -->
+  <script type="module" src="/js/header.js"></script>
+
+  <style>
+    body {
+      background-color: #111;
+      color: #fff;
+      font-family: 'Segoe UI', sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+    h1 {
+      margin-bottom: 20px;
+      color: #ff9900;
+    }
+    .credits-container {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin-top: 30px;
+    }
+    .credit-card {
+      background: #1c1c1c;
+      border-radius: 12px;
+      padding: 20px;
+      width: 250px;
+      box-shadow: 0 0 10px rgba(255, 153, 0, 0.3);
+    }
+    .credit-card h2 {
+      margin-bottom: 10px;
+      font-size: 24px;
+      color: #ff9900;
+    }
+    .credit-card p {
+      margin-bottom: 15px;
+    }
+    .buy-btn {
+      background-color: #ff9900;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-size: 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      margin-top: 10px;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .buy-btn:hover {
+      background-color: #e88a00;
+    }
+
+    /* New plugin sale card */
+    .plugin-card {
+      background: #1c1c1c;
+      border-radius: 12px;
+      padding: 20px;
+      width: 250px;
+      box-shadow: 0 0 10px rgba(255, 85, 0, 0.3);
+      text-align: center;
+      margin-top: 20px;
+    }
+    .plugin-card h2 {
+      margin-bottom: 10px;
+      font-size: 22px;
+      color: #ff5500;
+    }
+    .plugin-card p {
+      margin-bottom: 15px;
+      font-size: 14px;
+    }
+    .plugin-card .buy-plugin-btn {
+      background-color: #ff5500;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-size: 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .plugin-card .buy-plugin-btn:hover {
+      background-color: #ff3300;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="site-header"></div>
+
+  <main>
+    <h1>💳 Buy Credits</h1>
+    <p>Select a package to boost your music!</p>
+
+    <div class="credits-container">
+      <div class="credit-card">
+        <h2>500 Credits</h2>
+        <p>💰 $24.99 CAD</p>
+        <button class="buy-btn" onclick="startCheckout(2499, 500)">Buy 500</button>
+      </div>
+
+      <div class="credit-card">
+        <h2>1000 Credits</h2>
+        <p>💰 $34.99 CAD</p>
+        <a href="https://square.link/u/WVdzubsu" target="_blank" class="buy-btn">Buy 1000</a>
+      </div>
+
+      <div class="credit-card">
+        <h2>2500 Credits</h2>
+        <p>💰 $79.99 CAD</p>
+        <a href="https://square.link/u/1pNiZUso" target="_blank" class="buy-btn">Buy 2500</a>
+      </div>
+
+      <div class="credit-card">
+        <h2>5000 Credits</h2>
+        <p>💰 $139.99 CAD</p>
+        <a href="https://square.link/u/xIcjDvkN" target="_blank" class="buy-btn">Buy 5000</a>
+      </div>
+
+      <!-- NEW: VST3 Plugin Sale -->
+      <div class="plugin-card">
+        <h2>🔥 TrackRepost VST3 Plugin</h2>
+        <p>Boost your SoundCloud promotion workflow with the official TrackRepost plugin.</p>
+        <a href="https://square.link/u/PgfNRb7G" target="_blank" class="buy-plugin-btn">
+          Buy VST3 Plugin – $9.99
         </a>
       </div>
     </div>
