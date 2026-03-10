@@ -66,7 +66,7 @@
     body {
       background-color: #0d0d0d;
       color: #fff;
-      font-family: 'Arial', sans-serif;
+      font-family: Arial, sans-serif;
       text-align: center;
       padding: 40px;
     }
@@ -120,8 +120,58 @@
       flex-direction: column;
       gap: 10px;
     }
+
+    /* Plugin Ad Section */
+
+    .plugin-ad {
+      margin-top: 80px;
+      background: #111;
+      padding: 50px 20px;
+      border-radius: 12px;
+      max-width: 900px;
+      margin-left: auto;
+      margin-right: auto;
+      border: 1px solid #222;
+    }
+
+    .plugin-ad h2 {
+      font-size: 32px;
+      margin-bottom: 15px;
+    }
+
+    .plugin-price {
+      font-size: 28px;
+      color: #ffa500;
+      margin-top: 20px;
+    }
+
+    .buy-button {
+      display: inline-block;
+      margin-top: 25px;
+      padding: 14px 35px;
+      background: #ffa500;
+      color: black;
+      font-weight: bold;
+      border-radius: 8px;
+      font-size: 18px;
+      text-decoration: none;
+    }
+
+    .buy-button:hover {
+      background: #ffb733;
+    }
+
+    .badge {
+      background: #ffa500;
+      color: black;
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: bold;
+    }
   </style>
 </head>
+
 <body>
 
   <div class="login-box">
@@ -144,6 +194,42 @@
       </div>
     </div>
   </div>
+
+
+  <!-- Plugin Advertisement -->
+
+  <section class="plugin-ad">
+
+    <span class="badge">NEW PRODUCER TOOL</span>
+
+    <h2>🎛️ True Waveform 2 — Waveform Visualizer</h2>
+
+    <p>
+      True Waveform 2 is a real-time DJ-style waveform visualizer for your DAW.
+      Includes Rekordbox 3-Band, Rekordbox RGB, Serato Spectrum, Multicolor,
+      Classic, and Monochrome modes.
+    </p>
+
+    <p>
+      Smooth scrolling, zero-latency, and accurate frequency colors.
+    </p>
+
+    <p style="opacity:0.7;">
+      Includes macOS VST3/AU and Windows VST3
+    </p>
+
+    <div class="plugin-price">
+      CA$9.99
+    </div>
+
+    <a class="buy-button"
+      href="https://checkout.square.site/merchant/MLJC0SV21NH6F/checkout/7JJAT4RUXGTVSSEH7D7ALNJO"
+      target="_blank">
+      Buy & Download
+    </a>
+
+  </section>
+
 
   <footer>
     <p>© 2025 TrackRepost. All Rights Reserved.</p>
