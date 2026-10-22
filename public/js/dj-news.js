@@ -1,5 +1,3 @@
-// DJ News Feed Widget
-
 const feeds = [
   "https://djmag.com/rss.xml",
   "https://mixmag.net/rss",
@@ -11,53 +9,35 @@ async function loadNews() {
   const container = document.getElementById("news-container");
 
   if (!container) {
-    console.error("DJ News: #news-container not found");
+    console.error("news-container not found");
     return;
   }
 
-  container.innerHTML = "<p>Loading DJ news...</p>";
+  container.innerHTML = "<p>Loading DJ News...</p>";
 
-  let newsHTML = "";
+  let html = "";
 
   for (const feed of feeds) {
     try {
       const response = await fetch(
-        `https://api.allorigins.win/get?url=${encodeURIComponent(feed)}`
+        `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed)}`
       );
 
       const data = await response.json();
 
-      const parser = new DOMParser();
-      const xml = parser.parseFromString(
-        data.contents,
-        "text/xml"
-      );
+      if (!data.items) continue;
 
-      const items = xml.querySelectorAll("item, entry");
-
-      items.forEach((item) => {
-        const title =
-          item.querySelector("title")?.textContent ||
-          "Untitled Article";
-
-        const link =
-          item.querySelector("link")?.textContent ||
-          item.querySelector("link")?.getAttribute("href") ||
-          "#";
-
-        const description =
-          item.querySelector("description")?.textContent ||
-          item.querySelector("summary")?.textContent ||
-          "";
-
-        newsHTML += `
+      data.items.slice(0, 5).forEach(item => {
+        html += `
           <div class="news-card">
             <h3>
-              <a href="${link}" target="_blank" rel="noopener noreferrer">
-                ${title}
+              <a href="${item.link}" target="_blank" rel="noopener noreferrer">
+                ${item.title}
               </a>
             </h3>
-            <p>${description.substring(0, 180)}...</p>
+            <p>${(item.description || "")
+              .replace(/<[^>]*>/g, "")
+              .substring(0, 180)}...</p>
           </div>
         `;
       });
@@ -66,12 +46,8 @@ async function loadNews() {
     }
   }
 
-  if (newsHTML === "") {
-    container.innerHTML =
-      "<p>Unable to load DJ news right now.</p>";
-  } else {
-    container.innerHTML = newsHTML;
-  }
+  container.innerHTML =
+    html || "<p>No DJ news available right now.</p>";
 }
 
 document.addEventListener("DOMContentLoaded", loadNews);
