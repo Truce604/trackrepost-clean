@@ -1,46 +1,77 @@
-// DJ News — works instantly, no backend needed
+// DJ News Feed Widget
+
 const feeds = [
   "https://djmag.com/rss.xml",
   "https://mixmag.net/rss",
-  "https://edm.com/.rss/full/",
   "https://www.edmidentity.com/feed/",
-  "https://www.dancingastronaut.com/feed/",
-  "https://ra.co/rss"
+  "https://www.dancingastronaut.com/feed/"
 ];
 
 async function loadNews() {
   const container = document.getElementById("news-container");
-  container.innerHTML = "<p style='text-align:center;'>Fetching news...</p>";
+
+  if (!container) {
+    console.error("DJ News: #news-container not found");
+    return;
+  }
+
+  container.innerHTML = "<p>Loading DJ news...</p>";
+
+  let newsHTML = "";
 
   for (const feed of feeds) {
     try {
-      // Reliable proxy to bypass CORS
       const response = await fetch(
-        "https://api.allorigins.win/raw?url=" + encodeURIComponent(feed)
+        `https://api.allorigins.win/get?url=${encodeURIComponent(feed)}`
       );
-      const text = await response.text();
+
+      const data = await response.json();
+
       const parser = new DOMParser();
-      const xml = parser.parseFromString(text, "text/xml");
-      const items = xml.querySelectorAll("item");
+      const xml = parser.parseFromString(
+        data.contents,
+        "text/xml"
+      );
 
-      items.forEach(item => {
-        const title = item.querySelector("title")?.textContent || "";
-        const link = item.querySelector("link")?.textContent || "";
-        const description = item.querySelector("description")?.textContent || "";
+      const items = xml.querySelectorAll("item, entry");
 
-        const card = document.createElement("div");
-        card.className = "news-card";
-        card.innerHTML = `
-          <h3><a href="${link}" target="_blank">${title}</a></h3>
-          <p>${description.substring(0, 200)}...</p>
+      items.forEach((item) => {
+        const title =
+          item.querySelector("title")?.textContent ||
+          "Untitled Article";
+
+        const link =
+          item.querySelector("link")?.textContent ||
+          item.querySelector("link")?.getAttribute("href") ||
+          "#";
+
+        const description =
+          item.querySelector("description")?.textContent ||
+          item.querySelector("summary")?.textContent ||
+          "";
+
+        newsHTML += `
+          <div class="news-card">
+            <h3>
+              <a href="${link}" target="_blank" rel="noopener noreferrer">
+                ${title}
+              </a>
+            </h3>
+            <p>${description.substring(0, 180)}...</p>
+          </div>
         `;
-        container.appendChild(card);
       });
-    } catch (err) {
-      console.error("Feed failed:", feed, err);
+    } catch (error) {
+      console.error("Feed failed:", feed, error);
     }
+  }
+
+  if (newsHTML === "") {
+    container.innerHTML =
+      "<p>Unable to load DJ news right now.</p>";
+  } else {
+    container.innerHTML = newsHTML;
   }
 }
 
-loadNews();
-
+document.addEventListener("DOMContentLoaded", loadNews);
